@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Handheld History</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --txt:#f0efe8;--txt2:#a0a09a;--txt3:#686864;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+  --accent:#4a9960;--accent-bg:#1a2e1e;--accent-txt:#7dd494;
+  --danger:#e05a4a;--danger-bg:#2a1a18;--danger-txt:#f0958a;
+  --success:#4aaa65;--success-bg:#182a1e;--success-txt:#80d49a;
+  --info:#5a8ae0;--info-bg:#18222a;--info-txt:#90b4f0;
+  --warn:#c9952a;--warn-bg:#2a2010;--warn-txt:#f0c060;
+  --r:10px;--rl:14px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:'SF Mono','Fira Code',monospace
+}
+body{font-family:var(--font);background:var(--bg3);color:var(--txt);min-height:100vh}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto}
+.tab{flex:0 0 auto;padding:12px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--txt3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none;padding:1rem;max-width:480px;margin:0 auto;padding-bottom:4rem}
+.panel.on{display:block}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);margin:1.1rem 0 .4rem}
+.lbl.t{margin-top:.25rem}
+input,textarea,select{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--txt);font-family:var(--font);-webkit-appearance:none}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;line-height:1.5}
+input::placeholder,textarea::placeholder{color:var(--txt3)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hr{height:1px;background:var(--border);margin:1.1rem 0}
+.btn{width:100%;padding:12px;font-size:14px;font-weight:600;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;border:1px solid var(--border2);background:var(--bg);color:var(--txt);margin-top:.6rem}
+.btn:active{transform:scale(.98)}
+.btn.dim{opacity:.4;pointer-events:none}
+.btn.ok{border-color:var(--accent);color:var(--accent-txt);background:var(--accent-bg)}
+.btn.err{border-color:var(--danger);color:var(--danger-txt);background:var(--danger-bg)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sec{background:var(--bg2);border-color:var(--border)}
+.brow{display:flex;gap:8px;margin-top:.6rem}
+.brow .btn{margin-top:0;flex:1}
+.sm{padding:6px 11px;font-size:12px;font-weight:600;border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border2);background:var(--bg);color:var(--txt)}
+.sm.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.sm.ok{background:var(--success-bg);border-color:var(--success);color:var(--success-txt)}
+.sm.dim{opacity:.4;pointer-events:none}
+.status{font-size:13px;text-align:center;margin-top:8px;color:var(--txt2);min-height:16px}
+.src-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.src{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;text-align:left}
+.src.on{border:2px solid var(--accent);background:var(--accent-bg)}
+.src-code{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:2px}
+.src-lbl{font-size:13px;color:var(--txt)}
+.vwrap{position:relative}
+.sugg{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.si{padding:10px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);color:var(--txt)}
+.si:last-child{border-bottom:none}
+.sc{font-size:11px;color:var(--txt3);margin-left:6px}
+.crow{display:flex;gap:8px;align-items:center}
+.crow input{flex:1}
+.cipher{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:14px;font-weight:600;letter-spacing:.1em;color:var(--txt3);min-width:76px;text-align:center;font-family:var(--mono)}
+.cipher.on{color:var(--accent);border-color:var(--accent)}
+.sku-box{background:var(--bg2);border-radius:var(--rl);padding:1rem 1.25rem;border:1px solid var(--border);margin-top:1rem}
+.sku-lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.sku-val{font-family:var(--mono);font-size:14px;word-break:break-all;line-height:1.5}
+.seg{color:var(--txt3)}.seg.on{color:var(--txt)}
+.pub{font-size:13px;color:var(--txt2);margin-top:4px}
+.pub span{font-family:var(--mono);color:var(--txt);font-weight:600}
+.pf{display:flex;flex-direction:column;gap:7px;margin-top:.75rem}
+.fi{display:flex;flex-direction:column;gap:3px}
+.fi label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.fi input,.fi textarea{padding:8px 10px;font-size:13px;background:var(--bg2)}
+.fi textarea{min-height:50px}
+.grade-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.gb{padding:5px 9px;font-size:12px;font-weight:600;border-radius:20px;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--txt3);white-space:nowrap}
+.gb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.cg{margin-top:.6rem}
+.cg-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.pills{display:flex;flex-wrap:wrap;gap:4px}
+.pill{position:relative;padding:5px 9px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:20px;cursor:pointer;color:var(--txt2);user-select:none}
+.pill.on{background:var(--info-bg);border-color:var(--info);color:var(--info-txt)}
+.pill.obv{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-txt)}
+.pill.rev{background:var(--warn-bg);border-color:var(--warn);color:var(--warn-txt)}
+.stag{font-size:9px;font-weight:700;margin-left:3px}
+.pop{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:4px;z-index:300;box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:nowrap;flex-direction:row;gap:3px}
+.pop.on{display:flex}
+.po{padding:4px 8px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--txt)}
+.qi{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px}
+.qi-info{flex:1;min-width:0}
+.qi-sku{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.qi-name{font-size:13px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi-meta{font-size:12px;color:var(--txt2)}
+.qi-del{background:none;border:none;color:var(--txt3);font-size:20px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0}
+.venue-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vb{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px;font-size:13px;font-weight:500;cursor:pointer;color:var(--txt);text-align:center}
+.vb.on{border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent-txt)}
+.xf{display:none;flex-direction:column;gap:8px}
+.xf.on{display:flex}
+.cc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;margin-top:8px;cursor:pointer}
+.cc.on{border:2px solid var(--accent);background:var(--accent-bg)}
+.cc-sku{font-family:var(--mono);font-size:12px;color:var(--txt3);margin-bottom:3px}
+.cc-name{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.cc-meta,.cc-cost{font-size:12px;color:var(--txt2)}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.bs{background:var(--success-bg);color:var(--success-txt)}
+.bd{background:var(--danger-bg);color:var(--danger-txt)}
+.upload-area{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer;background:var(--bg2);margin-bottom:.75rem;position:relative}
+.upload-preview{display:none;position:relative}
+.upload-preview img{max-width:100%;max-height:180px;border-radius:var(--r);object-fit:contain}
+.upload-clr{position:absolute;top:4px;right:4px;background:var(--danger);border:none;color:white;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+.photo-area{display:flex;gap:8px;margin-top:.5rem}
+.photo-slot{flex:1;border:1.5px dashed var(--border2);border-radius:var(--r);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--bg2);overflow:hidden;position:relative}
+.photo-slot img{width:100%;height:100%;object-fit:cover}
+.photo-icon{font-size:24px;color:var(--txt3)}
+.photo-lbl{font-size:10px;font-weight:600;color:var(--txt3);margin-top:4px}
+.tag-pair{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.tag-txt{padding:8px;background:#1a1a12;font-size:8.5px;line-height:1.4;color:#e8e8d0;border-right:1px solid var(--border)}
+.tag-logo{padding:8px;background:#f5f4e8;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center}
+.tag-logo img{width:100%;max-width:110px}
+.wn-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);margin-bottom:5px}
+.wn-info{flex:1;min-width:0}
+.wn-sku{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.wn-name{font-size:13px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wn-price{font-size:12px;color:var(--accent);font-weight:600}
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:500;overflow-y:auto}
+.modal.on{display:block}
+.modal-box{background:var(--bg);margin:1rem auto;border-radius:var(--rl);overflow:hidden;max-width:480px}
+.modal-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10}
+.modal-title{font-size:15px;font-weight:600}
+.modal-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.modal-close{background:none;border:none;font-size:22px;color:var(--txt3);cursor:pointer;line-height:1;padding:4px}
+.modal-body{padding:1rem;display:flex;flex-direction:column;gap:10px}
+.modal-foot{padding:1rem;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg)}
+.modal-foot .btn{margin:0;flex:1}
+.rcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;position:relative}
+.rcard-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.75rem}
+.rcard-name{font-size:13px;font-weight:600}
+.rcard-del{background:none;border:none;font-size:18px;color:var(--txt3);cursor:pointer;line-height:1;padding:2px;flex-shrink:0}
+.rfi{display:flex;flex-direction:column;gap:2px}
+.rfi label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.rfi input,.rfi textarea{padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--txt);font-family:var(--font);width:100%}
+.rfi textarea{min-height:44px;resize:vertical;line-height:1.4}
+.settings-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;display:flex;flex-direction:column;gap:6px}
+.settings-row label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.settings-row input{padding:8px 10px;font-size:12px;font-family:var(--mono);background:var(--bg)}
+.test-out{font-size:13px;line-height:1.7;background:var(--bg2);border-radius:var(--r);padding:.75rem;white-space:pre-wrap;margin-top:.5rem;display:none}
+.schip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--bg);border:1px solid var(--border)}
+.schip b{font-family:var(--mono);font-size:13px}
+.st-NEW{color:var(--info-txt);border-color:var(--info)}
+.st-BASIC{color:var(--warn-txt);border-color:var(--warn)}
+.st-COMPLETE{color:var(--accent-txt);border-color:var(--accent)}
+.st-TAGGED{color:var(--success-txt);border-color:var(--success)}
+.st-LISTED{color:var(--txt);border-color:var(--border2)}
+.st-SOLD{color:var(--danger-txt);border-color:var(--danger)}
+.loc-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;margin-top:8px}
+.loc-where{display:flex;align-items:center;gap:8px;margin:8px 0}
+.loc-where .big{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent-txt);background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--r);padding:4px 12px}
+.loc-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.loc-row input,.loc-row select{flex:1;min-width:120px;padding:8px 10px;font-size:13px}
+.tray-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:6px}
+.tsq{padding:10px 0;font-size:12px;font-weight:600;font-family:var(--mono);border:1px solid var(--border2);border-radius:8px;background:var(--bg);color:var(--txt2);cursor:pointer;text-align:center;user-select:none}
+.tsq.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#print-area{display:none}
+#print-area .pa-txt{padding:5px;border:.5px solid #ccc;line-height:1.3;overflow:hidden;background:#fffff0;color:#1a1a18}
+#print-area .pa-logo{padding:6px;border:.5px solid #ccc;background:#f5f4e8;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center}
+#print-area .pa-logo img{width:88%;object-fit:contain}
+@media print{
+  body>*{display:none!important}
+  #print-area{display:grid!important;justify-content:start;gap:0}
+  @page{size:letter portrait;margin:.2in}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+@media screen{.no-print{}}
+@media print{.tabs,.no-print{display:none!important}}
+</style>
+</head>
+<body>
+
+<div id="print-area"></div>
+
+<div class="tabs">
+  <div class="tab on" onclick="go('intake')">＋ Intake</div>
+  <div class="tab" onclick="go('sale')">⊙ Sale</div>
+  <div class="tab" onclick="go('print')">⎙ Tags</div>
+  <div class="tab" onclick="go('whatnot')">▲ Whatnot</div>
+  <div class="tab" onclick="go('locate')">📍 Locate</div>
+  <div class="tab" onclick="go('settings')">⚙ Settings</div>
+</div>
+
+<!-- INTAKE -->
+<div class="panel on" id="panel-intake">
+  <p class="lbl t">Attribution / description</p>
+  <div class="upload-area" id="upload-area" onclick="document.getElementById('inv-file').click()">
+    <div id="upload-ph"><div style="font-size:26px">📄</div><div style="font-size:13px;font-weight:600;color:var(--txt2)">Take or upload a photo / screenshot</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">Invoice, tag, lot sheet · Parses 1–20+ coins</div><div style="font-size:11px;color:var(--warn);margin-top:2px;font-weight:600">📌 For PDFs: screenshot first</div></div>
+    <div class="upload-preview" id="upload-prev"><img id="upload-img" alt=""/><button class="upload-clr" onclick="clearUpload(event)">×</button></div>
+    <input type="file" id="inv-file" accept="image/*" style="display:none" onchange="onInvFile(this)"/>
+  </div>
+  <button class="btn sec" id="extract-btn" style="display:none;margin-bottom:.5rem" onclick="doExtract()">🔍 Extract coins from image</button>
+  <textarea id="attr-text" rows="3" placeholder="Or paste text attribution here..."></textarea>
+  <div class="brow">
+    <button class="btn sec" id="parse-btn" onclick="doParseText()">✦ Parse text</button>
+    <button class="btn sec" id="story-btn" onclick="doStory()">✍ Story</button>
+  </div>
+
+  <div id="pfields" style="display:none">
+    <div class="hr" style="margin-bottom:.5rem"></div>
+    <div class="pf">
+      <div class="g2">
+        <div class="fi"><label>Country / culture</label><input id="f-country" type="text"/></div>
+        <div class="fi"><label>Issuer / name</label><input id="f-name" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Reign</label><input id="f-reign" type="text"/></div>
+        <div class="fi"><label>Mint year</label><input id="f-year" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Metal</label><input id="f-metal" type="text"/></div>
+        <div class="fi"><label>Denomination</label><input id="f-denom" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Size / weight</label><input id="f-mmgm" type="text"/></div>
+        <div class="fi"><label>Mint city</label><input id="f-mint" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>AD / BC</label><input id="f-adbc" type="text"/></div>
+        <div class="fi"><label>Officina</label><input id="f-off" type="text"/></div>
+      </div>
+      <div class="fi"><label>Obverse</label><textarea id="f-obv"></textarea></div>
+      <div class="fi"><label>Reverse</label><textarea id="f-rev"></textarea></div>
+      <div class="fi"><label>References</label><input id="f-refs" type="text"/></div>
+
+      <div style="margin-top:.5rem">
+        <div class="cg-lbl">Grade</div>
+        <div class="grade-wrap" id="grade-btns">
+          <button class="gb" data-g="Poor" onclick="selGrade(this)">Poor</button>
+          <button class="gb" data-g="AG" onclick="selGrade(this)">AG</button>
+          <button class="gb" data-g="G" onclick="selGrade(this)">G</button>
+          <button class="gb" data-g="Ch G" onclick="selGrade(this)">Ch G</button>
+          <button class="gb" data-g="aVF" onclick="selGrade(this)">aVF</button>
+          <button class="gb" data-g="VF" onclick="selGrade(this)">VF</button>
+          <button class="gb" data-g="Ch VF" onclick="selGrade(this)">Ch VF</button>
+          <button class="gb" data-g="aXF" onclick="selGrade(this)">aXF</button>
+          <button class="gb" data-g="XF" onclick="selGrade(this)">XF</button>
+          <button class="gb" data-g="Ch XF" onclick="selGrade(this)">Ch XF</button>
+          <button class="gb" data-g="aAU" onclick="selGrade(this)">aAU</button>
+          <button class="gb" data-g="AU" onclick="selGrade(this)">AU</button>
+          <button class="gb" data-g="Ch AU" onclick="selGrade(this)">Ch AU</button>
+          <button class="gb" data-g="MS" onclick="selGrade(this)">MS</button>
+        </div>
+      </div>
+      <div class="cg"><div class="cg-lbl">Surface</div><div class="pills" id="p-surface"></div></div>
+      <div class="cg"><div class="cg-lbl">Strike &amp; centering</div><div class="pills" id="p-strike"></div></div>
+      <div class="cg"><div class="cg-lbl">Toning</div><div class="pills" id="p-toning"></div></div>
+      <div class="cg"><div class="cg-lbl">Eye appeal</div><div class="pills" id="p-appeal"></div></div>
+      <div class="fi"><label>Condition note</label><textarea id="f-cond" rows="2" placeholder="Auto-assembled above, or type freely..."></textarea></div>
+      <div class="fi"><label>Provenance (Ex...)</label><input id="f-prov" type="text" placeholder="Ex Artemide LXV, 2026, lot 71"/></div>
+      <div class="fi"><label>Story (optional)</label><textarea id="f-story" rows="3" placeholder="Historical context..."></textarea></div>
+      <div class="fi"><label>Retail price (USD)</label><input id="f-price" type="number" placeholder="e.g. 175" oninput="this.dataset.manual=1"/></div>
+
+      <div style="margin-top:.5rem">
+        <div class="cg-lbl">Photos</div>
+        <div class="photo-area">
+          <div class="photo-slot" id="ps-obv" onclick="document.getElementById('ph-obv').click()">
+            <div class="photo-icon">📷</div><div class="photo-lbl">Obverse</div>
+            <input type="file" id="ph-obv" accept="image/*" style="display:none" onchange="onPhoto('obv',this)"/>
+          </div>
+          <div class="photo-slot" id="ps-rev" onclick="document.getElementById('ph-rev').click()">
+            <div class="photo-icon">📷</div><div class="photo-lbl">Reverse</div>
+            <input type="file" id="ph-rev" accept="image/*" style="display:none" onchange="onPhoto('rev',this)"/>
+          </div>
+          <div class="photo-slot" id="ps-stitch" onclick="document.getElementById('ph-stitch').click()">
+            <div class="photo-icon">📷</div><div class="photo-lbl">Stitched</div>
+            <input type="file" id="ph-stitch" accept="image/*" style="display:none" onchange="onPhoto('stitch',this)"/>
+          </div>
+        </div>
+        <div id="photo-st" style="font-size:11px;color:var(--txt3);margin-top:4px;min-height:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+  <p class="lbl" style="margin-top:0">Source type</p>
+  <div class="src-grid">
+    <button class="src" data-code="AH" onclick="selSrc(this)"><div class="src-code">AH</div><div class="src-lbl">Auction house</div></button>
+    <button class="src" data-code="DT" onclick="selSrc(this)"><div class="src-code">DT</div><div class="src-lbl">Dealer trade</div></button>
+    <button class="src" data-code="DP" onclick="selSrc(this)"><div class="src-code">DP</div><div class="src-lbl">Direct / private</div></button>
+    <button class="src" data-code="BL" onclick="selSrc(this)"><div class="src-code">BL</div><div class="src-lbl">Bulk lot</div></button>
+  </div>
+  <p class="lbl">Vendor</p>
+  <div class="vwrap">
+    <input id="f-vendor" type="text" placeholder="e.g. CNG, Leu, private seller..." autocomplete="off" oninput="onVnd()"/>
+    <div class="sugg" id="sugg"></div>
+  </div>
+  <div class="g2" style="margin-top:.75rem">
+    <div><p class="lbl" style="margin-top:0">Lot number</p><input id="f-lot" type="text" placeholder="e.g. 583"/></div>
+    <div><p class="lbl" style="margin-top:0">Date acquired</p><input id="f-date" type="date"/></div>
+  </div>
+  <p class="lbl">Cost paid (USD)</p>
+  <div class="crow">
+    <input type="number" id="f-cost" placeholder="e.g. 385" oninput="onCost()"/>
+    <div class="cipher" id="cipher-out">—</div>
+  </div>
+
+  <div style="margin-top:.75rem">
+    <p class="lbl" style="margin-top:0">Status</p>
+    <select id="f-status">
+      <option value="NEW">NEW — received, not attributed</option>
+      <option value="BASIC">BASIC — rough ID done</option>
+      <option value="COMPLETE">COMPLETE — fully attributed</option>
+      <option value="TAGGED">TAGGED</option>
+      <option value="LISTED">LISTED</option>
+      <option value="SOLD">SOLD</option>
+    </select>
+  </div>
+
+  <p class="lbl">Tray</p>
+  <input id="f-tray" type="text" placeholder="Tray label, e.g. A-014, INTAKE-A01, or 3" autocomplete="off" oninput="updLoc()"/>
+  <div class="cg-lbl" style="margin-top:8px">Square <span style="font-weight:400;text-transform:none">(tap the square where the coin sits — rows A–D, columns 1–6)</span></div>
+  <div id="tray-grid" class="tray-grid"></div>
+  <div class="loc-row" style="margin-top:8px">
+    <input id="f-location" type="text" readonly placeholder="(location builds here)" style="color:var(--txt2)"/>
+    <button class="sm" onclick="clearSquare()">Clear square</button>
+  </div>
+  <p style="font-size:11px;color:var(--txt3);margin-top:4px">Tip: you can save a coin as <b>NEW</b> with just SKU, cost, source &amp; tray, and attribute it later — the coin is in inventory immediately. The square is optional; tray alone is fine.</p>
+
+  <div class="hr"></div>
+  <div class="sku-box">
+    <div class="sku-lbl">Internal SKU</div>
+    <div class="sku-val"><span class="seg" id="s0">AH</span><span class="seg">-</span><span class="seg" id="s1">???</span><span class="seg">-</span><span class="seg" id="s2">YYYYMM</span><span class="seg">-</span><span class="seg" id="s3">???</span><span class="seg">-</span><span class="seg" id="s4">0001</span></div>
+    <div class="pub">Public SKU: <span id="pub-sku">—</span></div>
+  </div>
+
+  <div class="brow" style="margin-top:1rem">
+    <button class="btn sec" id="q-btn" onclick="addToQueue()">+ Queue</button>
+    <button class="btn pri" id="s-btn" onclick="addToQueue(true)">+ Submit now</button>
+  </div>
+  <div class="status" id="intake-st"></div>
+
+  <div id="queue-wrap" style="display:none;margin-top:1.5rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <p class="lbl" style="margin:0">Queue (<span id="q-count">0</span>)</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="sm" onclick="exportWN()">▲ Whatnot CSV</button>
+        <button class="sm pri" id="submit-all-btn" onclick="submitAll()">Submit all</button>
+      </div>
+    </div>
+    <div id="queue-list" style="margin-top:.75rem"></div>
+    <div class="status" id="queue-st"></div>
+  </div>
+</div>
+
+<!-- SALE -->
+<div class="panel" id="panel-sale">
+  <p class="lbl t">Find coin</p>
+  <div style="position:relative">
+    <input id="sale-search" type="text" placeholder="SKU, name, description..." oninput="onSaleSearch()"/>
+    <button onclick="clearSale()" id="sale-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;color:var(--txt3);cursor:pointer">×</button>
+  </div>
+  <div id="sale-results"></div>
+  <div id="sale-form" style="display:none">
+    <div class="hr"></div>
+    <div class="cc on" id="selected-card" style="cursor:default;margin-top:0">
+      <div class="cc-sku" id="sel-sku"></div>
+      <div class="cc-name" id="sel-name"></div>
+      <div class="cc-meta" id="sel-meta"></div>
+      <div class="cc-cost" id="sel-cost"></div>
+    </div>
+    <p class="lbl">Sale price (USD)</p><input type="number" id="sale-price" placeholder="e.g. 450"/>
+    <p class="lbl">Venue</p>
+    <div class="venue-grid">
+      <button class="vb" data-v="Coin Show" onclick="selVenue(this)">Coin Show</button>
+      <button class="vb" data-v="Whatnot" onclick="selVenue(this)">Whatnot</button>
+      <button class="vb" data-v="Facebook" onclick="selVenue(this)">Facebook</button>
+      <button class="vb" data-v="Private Message" onclick="selVenue(this)">Private</button>
+      <button class="vb" data-v="eBay" onclick="selVenue(this)">eBay</button>
+      <button class="vb" data-v="VCoins" onclick="selVenue(this)">VCoins</button>
+    </div>
+    <div class="xf" id="wn-extra">
+      <p class="lbl">Whatnot show name</p><input id="wn-show" type="text" placeholder="e.g. Roman Rarities Live #42"/>
+      <p class="lbl">Whatnot lot number</p><input id="wn-lot" type="text" placeholder="e.g. 14"/>
+    </div>
+    <p class="lbl">Sale date</p><input id="sale-date" type="date"/>
+    <p class="lbl">Buyer name</p><input id="buyer-name" type="text"/>
+    <p class="lbl">Buyer address</p><textarea id="buyer-addr" rows="2"></textarea>
+    <button class="btn pri" id="sale-btn" onclick="doSale()">✓ Record sale</button>
+    <div class="status" id="sale-st"></div>
+  </div>
+</div>
+
+<!-- PRINT TAGS -->
+<div class="panel" id="panel-print">
+  <p class="lbl t">Select coins to print</p>
+  <div class="brow">
+    <button class="btn sec" onclick="printFromQueue()">From queue</button>
+    <button class="btn sec" onclick="printSearchShow()">Search sheet</button>
+  </div>
+  <div id="print-search-wrap" style="display:none;margin-top:.75rem">
+    <input type="text" id="print-search" placeholder="Search by name, SKU..." oninput="onPrintSearch()"/>
+    <div id="print-search-res"></div>
+  </div>
+  <div id="print-selected" style="margin-top:.75rem"></div>
+  <div id="print-actions" style="display:none">
+    <div class="hr"></div>
+    <p class="lbl">Tag size</p>
+    <div class="brow" style="flex-wrap:wrap">
+      <button class="btn sec" onclick="tagPreset('s')">Small (2×2 in)</button>
+      <button class="btn sec" onclick="tagPreset('m')">Medium (1.75×1.75)</button>
+      <button class="btn sec" onclick="tagPreset('l')">Large (2.5×2.5)</button>
+    </div>
+    <div class="g2" style="margin-top:.5rem">
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Tag width (in)</label>
+        <input type="number" id="ts-w" step="0.05" min="0.75" oninput="onTagSize()"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Tag height (in)</label>
+        <input type="number" id="ts-h" step="0.05" min="0.75" oninput="onTagSize()"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Text size (pt)</label>
+        <input type="number" id="ts-f" step="0.5" min="3" oninput="onTagSize()"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Tags across (info+logo each)</label>
+        <input type="number" id="ts-cols" step="1" min="1" max="4" oninput="onTagSize()"/>
+      </div>
+    </div>
+    <p id="ts-note" style="font-size:11px;color:var(--txt3);margin-top:4px"></p>
+    <div class="hr"></div>
+    <div id="tag-preview"></div>
+    <button class="btn pri no-print" onclick="doPrint()">⎙ Print tags</button>
+  </div>
+</div>
+
+<!-- WHATNOT -->
+<div class="panel" id="panel-whatnot">
+  <p class="lbl t">Whatnot CSV export</p>
+  <p style="font-size:13px;color:var(--txt2);margin-bottom:.75rem">Select coins for your batch upload CSV. Price = retail × 1.10.</p>
+  <div class="brow">
+    <button class="btn sec" onclick="wnFromQueue()">From queue</button>
+    <button class="btn sec" onclick="wnSearchShow()">Search sheet</button>
+  </div>
+  <div id="wn-search-wrap" style="display:none;margin-top:.75rem">
+    <input type="text" id="wn-search" placeholder="Search..." oninput="onWnSearch()"/>
+    <div id="wn-search-res"></div>
+  </div>
+  <div id="wn-list" style="margin-top:.75rem"></div>
+  <div id="wn-actions" style="display:none">
+    <div class="hr"></div>
+    <button class="btn pri" onclick="dlWN()">⬇ Download Whatnot CSV</button>
+  </div>
+</div>
+
+<!-- LOCATE -->
+<div class="panel" id="panel-locate">
+  <p class="lbl t">Locate / pull a coin</p>
+  <div id="status-summary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem"></div>
+  <input type="text" id="loc-search" placeholder="SKU, name, country, or tray..." oninput="onLocSearch()"/>
+  <p style="font-size:12px;color:var(--txt3);margin-top:6px">Search by tray (e.g. <b>A-014</b>) to see everything in that tray, or by SKU/name to find one coin and where it lives.</p>
+  <div id="loc-results" style="margin-top:.5rem"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="panel" id="panel-settings">
+  <p class="lbl t">Anthropic API key</p>
+  <div class="settings-row">
+    <label>Current key</label>
+    <input type="text" id="key-display" readonly style="color:var(--txt3)"/>
+    <label style="margin-top:.5rem">New key (paste full sk-ant-... key)</label>
+    <input type="text" id="key-input" placeholder="sk-ant-..."/>
+    <button class="btn sec" style="margin-top:.5rem" onclick="saveKey()">Save API key</button>
+  </div>
+
+  <p class="lbl">Google Sheets connection</p>
+  <div class="settings-row">
+    <label>Status</label>
+    <div id="conn-status" style="font-size:13px;color:var(--txt2)">Checking...</div>
+    <label style="margin-top:.5rem">Apps Script web app URL</label>
+    <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/.../exec"/>
+    <label style="margin-top:.5rem">Shared secret (must match the script)</label>
+    <input type="text" id="secret-input" placeholder="your-secret-password"/>
+    <button class="btn sec" style="margin-top:.5rem" onclick="saveConn()">Save connection</button>
+    <p style="font-size:11px;color:var(--txt3);margin-top:.5rem">Setup (once): open your Sheet → Extensions → Apps Script → paste the provided code → set SECRET → Deploy → New deployment → Web app → Execute as <b>Me</b>, Access <b>Anyone</b> → copy the /exec URL here. This never expires.</p>
+  </div>
+
+  <p class="lbl">Tag logo</p>
+  <div class="settings-row">
+    <div id="logo-status" style="font-size:13px;color:var(--txt2)">No logo set</div>
+    <div id="logo-prev" style="margin:6px 0"></div>
+    <label>Upload a logo image (PNG/JPG) — appears on printed tags</label>
+    <input type="file" id="logo-file" accept="image/*" onchange="onLogoFile(this)"/>
+    <button class="btn sec" style="margin-top:.5rem" onclick="clearLogo()">Remove logo</button>
+  </div>
+
+
+  <p class="lbl">Test connections</p>
+  <button class="btn sec" onclick="testAll()">Run connection test</button>
+  <div class="test-out" id="test-out"></div>
+
+  <div class="hr"></div>
+  <button class="btn err" onclick="nukeAll()">Clear all saved data</button>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="modal-alloc">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="modal-title">Total amount paid (USD)</div><div class="modal-sub" id="alloc-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-alloc')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--txt2)">Enter your total all-in USD cost (hammer + buyer fee + shipping + conversion). It's split across the coins below.</p>
+      <input type="number" id="alloc-total" placeholder="e.g. 4971.48" style="font-size:18px;font-weight:600;padding:14px;text-align:center" oninput="updateAllocPreview()"/>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn sec" id="alloc-prop" style="margin-top:0;flex:1" onclick="setAllocMode('prop')">By hammer price</button>
+        <button class="btn sec" id="alloc-equal" style="margin-top:0;flex:1" onclick="setAllocMode('equal')">Split equally</button>
+      </div>
+      <p style="font-size:11px;color:var(--txt3);margin-top:6px">Use <b>By hammer price</b> for a multi-lot invoice where each coin has its own hammer. Use <b>Split equally</b> for a group/bulk lot bought as one — the total is divided evenly by the number of coins.</p>
+      <div id="alloc-preview" style="font-size:12px;color:var(--txt3);text-align:center;min-height:16px;margin-top:4px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn sec" onclick="closeModal('modal-alloc')">Cancel</button>
+      <button class="btn pri" onclick="confirmAlloc()">Review coins →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-review">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="modal-title">Review parsed coins</div><div class="modal-sub" id="review-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-review')">×</button>
+    </div>
+    <div class="modal-body" id="review-cards"></div>
+    <div class="modal-foot">
+      <button class="btn sec" onclick="closeModal('modal-review')">Cancel</button>
+      <button class="btn pri" id="approve-btn" onclick="approveAll()">Add all to queue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ────────────────────────────────────
+const API='https://api.anthropic.com/v1/messages';
+const SHEET_ID='1uDgCHEGaUTFxNPJ4X_UkpwIOvXoVwQBHCL5C5E27WFQ'; // reference only — the Apps Script is bound to this sheet directly
+// Logo for printed tags is uploaded in Settings and read via getLogo()
+const CIPHER_MAP={0:'G',1:'O',2:'L',3:'D',4:'S',5:'T',6:'R',7:'I',8:'K',9:'E'};
+const GRADE_WN={MS:'New','Ch AU':'New',AU:'New',aAU:'Like New','Ch XF':'Like New',XF:'Like New',aXF:'Very Good','Ch VF':'Very Good',VF:'Very Good',aVF:'Good','Ch G':'Good',G:'Good',AG:'Acceptable',Poor:'Acceptable'};
+const VENDORS=[{n:'CNG',f:'Classical Numismatic Group'},{n:'LEU',f:'Leu Numismatik'},{n:'NAC',f:'Numismatica Ars Classica'},{n:'ROM',f:'Roma Numismatics'},{n:'KNK',f:'Künker'},{n:'GNM',f:'Gorny & Mosch'},{n:'HRT',f:'Heritage Auctions'},{n:'ART',f:'Artemide Asta'},{n:'BTF',f:'Bertolami Fine Arts'},{n:'EID',f:'Eid Mar'},{n:'MDC',f:'MDC Monaco'},{n:'NMD',f:'Numismad'},{n:'EBY',f:'eBay'},{n:'WNT',f:'Whatnot'}];
+const COND={
+  'p-surface':['Lustrous','Smoothed','Smooth','Porous','Granular','Tooled','Scratched',"Banker's marks",'Countermark','Graffiti','Encrusted','Cleaned','Patinated'],
+  'p-strike':['Well struck','Weakly struck','Centered','Slightly off-center','Off-center','Double struck','Brockage'],
+  'p-toning':['Original toning','Attractive toning','Iridescent','Smooth toning','Mottled','Harsh toning','Artificial toning','Dark toning','Light toning'],
+  'p-appeal':['Sharp','Bold','Choice','Problem-free','Cabinet friction','Worn smooth']
+};
+const SIDE_PREFIXES=['Obverse:','Reverse:','Obverse.','Reverse.','Obv:','Rev:','Obv.','Rev.','D/','R/','O/'];
+
+// ── STATE ────────────────────────────────────────
+let S={src:'AH',vcode:'',vfull:'',seq:1};
+let queue=[];
+let editIdx=-1;
+let reviewCoins=[];
+let allocCosts=[];
+let allocMode='prop';
+let invMeta=null;
+let photoLinks={obv:'',rev:'',stitch:''};
+let selVenueVal='';
+let selCoin=null;
+let printSel=[];
+let wnSel=[];
+let condState={};
+let activePopup=null;
+let saleSearchT=null;
+let printSearchT=null;
+let wnSearchT=null;
+let traySquare='';
+
+// ── STORAGE ──────────────────────────────────────
+function getKey(){return localStorage.getItem('hh_key')||'';}
+function getScriptUrl(){return localStorage.getItem('hh_url')||'';}
+function getSecret(){return localStorage.getItem('hh_secret')||'';}
+function getLogo(){return localStorage.getItem('hh_logo')||'';}
+
+// Pulls the next SKU number from the sheet so all devices share one counter.
+// Only runs when the local queue is empty, so it never disturbs pending coins.
+async function fetchNextSeq(){
+  if(!getScriptUrl()||queue.length)return;
+  try{const d=await callScript('nextseq',{});if(d&&d.next){S.seq=d.next;saveQ();updSKU();}}catch(e){}
+}
+function saveQ(){try{localStorage.setItem('hh_q',JSON.stringify(queue));localStorage.setItem('hh_seq',S.seq);}catch(e){}}
+function loadQ(){try{const q=localStorage.getItem('hh_q');const s=localStorage.getItem('hh_seq');if(q)queue=JSON.parse(q);if(s)S.seq=parseInt(s)||1;}catch(e){}}
+
+// ── TAB NAV ──────────────────────────────────────
+function go(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('on',['intake','sale','print','whatnot','locate','settings'][i]===t);});
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('on'));
+  const p=document.getElementById('panel-'+t);
+  if(p)p.classList.add('on');
+  if(t==='settings')loadSettings();
+  if(t==='locate')loadStats();
+  if(t==='intake')fetchNextSeq();
+}
+
+// ── API CALLS ────────────────────────────────────
+async function claude(messages,maxTokens,imageBlock){
+  const key=getKey();
+  if(!key)throw new Error('No API key. Go to Settings tab.');
+  const body={model:'claude-sonnet-4-6',max_tokens:maxTokens||1000,messages};
+  const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  const data=await resp.json();
+  if(data.error)throw new Error(data.error.type+': '+data.error.message);
+  return(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+
+// Calls the Apps Script web app. Uses text/plain so the browser skips the
+// CORS preflight (Apps Script can't answer preflights); the secret travels
+// in the body. The script renews nothing — it runs as you, so it never expires.
+async function callScript(action,payload){
+  const url=getScriptUrl();
+  if(!url)throw new Error('No Apps Script URL. Go to Settings tab.');
+  const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,secret:getSecret(),...(payload||{})})});
+  let data;
+  try{data=await resp.json();}catch(e){throw new Error('Bad response from script — check the URL is the /exec link.');}
+  if(data.error)throw new Error(data.error);
+  return data;
+}
+
+async function sheetsAppend(rows){return await callScript('append',{rows});}
+
+async function sheetsUpdate(row,cols,values){return await callScript('update',{row,startCol:cols,values});}
+
+async function sheetsSearch(q){const data=await callScript('search',{query:q});return data.results||[];}
+
+// ── HELPERS ──────────────────────────────────────
+function cipher(n){if(!n||isNaN(n))return'';return String(Math.round(n)).split('').map(d=>CIPHER_MAP[+d]).join('');}
+function r5(n){return Math.round(n*1.75/5)*5;}
+function strip(s){if(!s)return'';let t=s.trim();for(const p of SIDE_PREFIXES){if(t.toLowerCase().startsWith(p.toLowerCase())){t=t.slice(p.length).trim();break;}}return t;}
+function gv(id){return(document.getElementById(id)||{}).value||'';}
+function sv(id,v){const e=document.getElementById(id);if(e)e.value=v||'';}
+function dtCode(){const r=gv('f-date');if(r)return r.replace(/-/g,'').slice(0,6);const n=new Date();return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0');}
+function vcode(){return S.vcode||(S.vfull.slice(0,3).toUpperCase())||'???';}
+function pubSKU(){const sl={AH:'A',DT:'D',DP:'P',BL:'B'}[S.src]||'X';return sl+'-'+String(S.seq).padStart(4,'0');}
+function intSKU(costOverride){const c=(costOverride!==undefined&&costOverride!=='')?costOverride:gv('f-cost');return`${S.src}-${vcode()}-${dtCode()}-${cipher(c)||'000'}-${String(S.seq).padStart(4,'0')}`;}
+function gradeToWN(g){return GRADE_WN[g]||'Acceptable';}
+function csvEsc(s){if(!s)return'';s=String(s).replace(/"/g,'""');return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s+'"':s;}
+function closeModal(id){document.getElementById(id).classList.remove('on');document.body.style.overflow='';}
+function openModal(id){document.getElementById(id).classList.add('on');document.body.style.overflow='hidden';}
+
+// ── SKU DISPLAY ──────────────────────────────────
+function updSKU(){
+  const ci=cipher(gv('f-cost'))||'???';
+  const segs=[[S.src,'AH'],[vcode(),'???'],[dtCode(),'YYYYMM'],[ci,'???'],[String(S.seq).padStart(4,'0'),'0001']];
+  segs.forEach(([v,empty],i)=>{const e=document.getElementById('s'+i);if(!e)return;e.textContent=v;e.className=v===empty?'seg':'seg on';});
+  const p=document.getElementById('pub-sku');if(p)p.textContent=pubSKU();
+}
+
+// ── SOURCE ───────────────────────────────────────
+function selSrc(b){document.querySelectorAll('.src').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.src=b.dataset.code;updSKU();}
+
+// ── TRAY / LOCATION ──────────────────────────────
+function buildTrayGrid(){
+  const g=document.getElementById('tray-grid');if(!g)return;
+  let h='';
+  ['A','B','C','D'].forEach(r=>{for(let c=1;c<=6;c++){const id=r+c;h+=`<div class="tsq" id="tsq-${id}" onclick="selectSquare('${id}')">${id}</div>`;}});
+  g.innerHTML=h;applySquareHighlight();
+}
+function selectSquare(id){traySquare=(traySquare===id)?'':id;applySquareHighlight();updLoc();}
+function applySquareHighlight(){document.querySelectorAll('.tsq').forEach(e=>e.classList.remove('on'));if(traySquare){const el=document.getElementById('tsq-'+traySquare);if(el)el.classList.add('on');}}
+function clearSquare(){traySquare='';applySquareHighlight();updLoc();}
+function updLoc(){const tray=gv('f-tray').trim();sv('f-location',tray&&traySquare?tray+'-'+traySquare:(tray||traySquare));}
+
+// ── GRADE ────────────────────────────────────────
+function selGrade(b){document.querySelectorAll('.gb').forEach(x=>x.classList.remove('on'));b.classList.add('on');assembleCondition();}
+
+// ── CONDITION PILLS ──────────────────────────────
+function buildPills(){
+  Object.entries(COND).forEach(([gid,attrs])=>{
+    const container=document.getElementById(gid);if(!container)return;
+    attrs.forEach(attr=>{
+      condState[attr]='none';
+      const pill=document.createElement('div');pill.className='pill';pill.id='pill-'+attr.replace(/[^a-z]/gi,'_');
+      pill.innerHTML=attr+'<span class="stag" id="stag-'+attr.replace(/[^a-z]/gi,'_')+'"></span>';
+      let pt;
+      const sp=()=>{pt=setTimeout(()=>showPop(attr,pill),500);};
+      const ep=()=>clearTimeout(pt);
+      pill.addEventListener('mousedown',sp);pill.addEventListener('mouseup',ep);
+      pill.addEventListener('touchstart',sp,{passive:true});pill.addEventListener('touchend',ep);
+      pill.addEventListener('click',()=>{condState[attr]=condState[attr]==='none'?'both':'none';updPill(attr);assembleCondition();});
+      const pop=document.createElement('div');pop.className='pop';pop.id='pop-'+attr.replace(/[^a-z]/gi,'_');
+      ['Obv','Rev','Both','✕'].forEach(opt=>{const o=document.createElement('div');o.className='po';o.textContent=opt;o.addEventListener('click',e=>{e.stopPropagation();condState[attr]=opt==='✕'?'none':opt==='Obv'?'obv':opt==='Rev'?'rev':'both';pop.classList.remove('on');activePopup=null;updPill(attr);assembleCondition();});pop.appendChild(o);});
+      pill.appendChild(pop);container.appendChild(pill);
+    });
+  });
+  document.addEventListener('click',()=>{if(activePopup){activePopup.classList.remove('on');activePopup=null;}});
+}
+function showPop(attr,pill){const pop=document.getElementById('pop-'+attr.replace(/[^a-z]/gi,'_'));if(activePopup&&activePopup!==pop)activePopup.classList.remove('on');pop.classList.add('on');activePopup=pop;}
+function updPill(attr){const id=attr.replace(/[^a-z]/gi,'_');const pill=document.getElementById('pill-'+id);const stag=document.getElementById('stag-'+id);const s=condState[attr];pill.className='pill'+(s==='none'?'':(s==='obv'?' obv':s==='rev'?' rev':' on'));stag.textContent=s==='obv'?' Obv':s==='rev'?' Rev':'';}
+function assembleCondition(){
+  const g=document.querySelector('.gb.on');let parts=[];
+  if(g)parts.push(g.dataset.g+'.');
+  const sl=[],wh=[];
+  Object.entries(condState).forEach(([a,s])=>{if(s==='none')return;if(s==='obv')sl.push(a+' (obv)');else if(s==='rev')sl.push(a+' (rev)');else wh.push(a);});
+  if(wh.length)parts.push(wh.join(', ')+'.');
+  if(sl.length)parts.push(sl.join(', ')+'.');
+  sv('f-cond',parts.join(' '));
+}
+
+// ── VENDOR ───────────────────────────────────────
+function onVnd(){
+  const v=gv('f-vendor').toUpperCase();S.vfull=v;S.vcode='';
+  const box=document.getElementById('sugg');if(!box)return;
+  if(!v){box.style.display='none';updSKU();return;}
+  const m=VENDORS.filter(x=>x.n.startsWith(v)||x.f.toUpperCase().includes(v));
+  if(!m.length){box.style.display='none';updSKU();return;}
+  box.innerHTML=m.slice(0,5).map(x=>`<div class="si" onclick="pickV('${x.n}','${x.f.replace(/'/g,"\'")}'">${x.f}<span class="sc">${x.n}</span></div>`).join('');
+  box.style.display='block';updSKU();
+}
+function pickV(code,full){S.vcode=code;S.vfull=full;sv('f-vendor',full);document.getElementById('sugg').style.display='none';updSKU();}
+document.addEventListener('click',e=>{if(!e.target.closest('.vwrap')){const b=document.getElementById('sugg');if(b)b.style.display='none';}});
+
+// ── COST ─────────────────────────────────────────
+function onCost(){
+  const v=gv('f-cost');const c=cipher(v);const el=document.getElementById('cipher-out');
+  el.textContent=c||'—';el.className=c?'cipher on':'cipher';
+  const pe=document.getElementById('f-price');
+  if(pe&&!pe.dataset.manual&&v&&!isNaN(v))pe.value=r5(parseFloat(v));
+  updSKU();
+}
+
+// ── INVOICE IMAGE ────────────────────────────────
+let invB64='',invType='';
+function onInvFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    invB64=e.target.result.split(',')[1];invType=file.type;
+    document.getElementById('upload-ph').style.display='none';
+    const prev=document.getElementById('upload-prev');prev.style.display='block';
+    document.getElementById('upload-img').src=e.target.result;
+    document.getElementById('extract-btn').style.display='flex';
+  };
+  reader.readAsDataURL(file);
+}
+function clearUpload(e){e.stopPropagation();invB64='';invType='';document.getElementById('upload-ph').style.display='block';document.getElementById('upload-prev').style.display='none';document.getElementById('extract-btn').style.display='none';document.getElementById('inv-file').value='';}
+
+async function doExtract(){
+  const st=document.getElementById('intake-st');
+  if(!invB64){st.textContent='No image loaded.';return;}
+  if(!getKey()){st.textContent='No API key — go to Settings tab first.';return;}
+  const btn=document.getElementById('extract-btn');
+  btn.className='btn sec dim';btn.textContent='⏳ Extracting...';st.textContent='Reading invoice...';
+  try{
+    const mime=(invType&&invType.startsWith('image/')&&!invType.includes('heic')&&!invType.includes('heif'))?invType:'image/jpeg';
+    const body={model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mime,data:invB64}},
+      {type:'text',text:`You are a numismatic expert. Extract every coin from this image. Return ONLY a JSON array, no markdown.
+
+First element must be invoice_meta: {"invoice_meta":true,"subtotal":"sum of hammers","total_due":"final total","vendor":"auction house name","auction_name":"specific sale name"}
+
+Then one object per coin with these fields (use "" if not found):
+country, name, reign, year, adbc, metal, denomination, mmgm, mint (city only, not blank if mentioned), officina, obverse (description only — NO D/ R/ Obv: Rev: prefixes), reverse (description only — NO prefixes), refs, observations, provenance (Ex... format, search carefully throughout description), price (hammer price number only), hammer (same as price)
+
+Formatting rules:
+- name: person/issuer name ONLY — no role titles like "Moneyer", "Magistrate", "Consul", "Triumvir".
+- denomination: capitalize the first letter (e.g. "Denarius", "Tetradrachm").
+- mmgm: format as "26mm, 36.24g" — NO space between a number and its unit.
+
+Example:
+[{"invoice_meta":true,"subtotal":"3430","total_due":"4268.87","vendor":"Artemide Asta","auction_name":"Artemide LXV"},
+{"country":"Greek Italy, Bruttium","name":"Kaulonia","reign":"","year":"475-425","adbc":"BC","metal":"AR","denomination":"Stater","mmgm":"19.5mm, 7.78g","mint":"Kaulonia","officina":"","obverse":"Apollo striding right holding branch; small daimon on his arm; stag to right","reverse":"Stag standing right","refs":"HN Italy 2044; HGC 1 1419","observations":"Attractive, well centered. Good VF.","provenance":"Ex H.D. Rauch 117, 2023, lot 388; Ex Artemide LXI, 2024, lot 125","price":"380","hammer":"380"}]`}
+    ]}]};
+    const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.type+': '+data.error.message);
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(raw);
+    invMeta=parsed[0]&&parsed[0].invoice_meta?parsed[0]:null;
+    reviewCoins=invMeta?parsed.slice(1):parsed;
+    reviewCoins=reviewCoins.map(c=>({...c,obverse:strip(c.obverse||''),reverse:strip(c.reverse||'')}));
+    if(!reviewCoins.length)throw new Error('No coins found in image');
+    // Auto-fill vendor from invoice
+    if(invMeta&&invMeta.vendor&&!gv('f-vendor')){
+      const nm=invMeta.auction_name||invMeta.vendor;sv('f-vendor',nm);S.vfull=nm;
+      const matched=VENDORS.find(v=>invMeta.vendor.toLowerCase().includes(v.f.split(' ')[0].toLowerCase()));
+      if(matched)S.vcode=matched.n;updSKU();
+    }
+    st.textContent=`Found ${reviewCoins.length} coin(s).`;
+    btn.className='btn sec';btn.textContent='🔍 Extract coins from image';
+    openAlloc();
+  }catch(err){
+    btn.className='btn sec';btn.textContent='🔍 Extract coins from image';
+    st.textContent='Error: '+err.message;
+  }
+}
+
+// ── ALLOCATION ───────────────────────────────────
+function openAlloc(){
+  document.getElementById('alloc-sub').textContent=reviewCoins.length+' coin'+(reviewCoins.length!==1?'s':'')+' found';
+  const totalEl=document.getElementById('alloc-total');
+  if(invMeta&&invMeta.total_due)totalEl.value=parseFloat(String(invMeta.total_due).replace(/[^0-9.]/g,'')).toFixed(2);
+  else totalEl.value='';
+  // Default to equal split when there are no usable per-coin hammer prices (i.e. a group/bulk lot)
+  const hh=reviewCoins.map(c=>parseFloat(String(c.hammer||c.price||'0').replace(/[^0-9.]/g,''))||0);
+  allocMode=(hh.reduce((a,b)=>a+b,0)>0 && S.src!=='BL')?'prop':'equal';
+  setAllocMode(allocMode);
+  openModal('modal-alloc');
+}
+function setAllocMode(m){
+  allocMode=m;
+  const p=document.getElementById('alloc-prop'),e=document.getElementById('alloc-equal');
+  if(p)p.className='btn '+(m==='prop'?'pri':'sec');if(p)p.style.marginTop='0';
+  if(e)e.className='btn '+(m==='equal'?'pri':'sec');if(e)e.style.marginTop='0';
+  updateAllocPreview();
+}
+function updateAllocPreview(){
+  const total=parseFloat(gv('alloc-total'))||0;
+  const prev=document.getElementById('alloc-preview');if(!prev)return;
+  if(!total){prev.textContent='';return;}
+  const n=reviewCoins.length;
+  if(allocMode==='equal'){
+    const each=total/n;allocCosts=reviewCoins.map(()=>each);
+    prev.textContent='Equal split: $'+each.toFixed(2)+' each × '+n+' coins';
+    return;
+  }
+  const hammers=reviewCoins.map(c=>parseFloat(String(c.hammer||c.price||'0').replace(/[^0-9.]/g,''))||0);
+  const sub=hammers.reduce((a,b)=>a+b,0);
+  if(sub>0){allocCosts=hammers.map(h=>(h/sub)*total);prev.textContent=reviewCoins.map((c,i)=>(c.name||'Coin')+': $'+allocCosts[i].toFixed(0)).join(' · ');}
+  else{const each=total/n;allocCosts=reviewCoins.map(()=>each);prev.textContent='No hammer prices found — equal split: $'+each.toFixed(2)+' each';}
+}
+function confirmAlloc(){
+  const total=parseFloat(gv('alloc-total'))||0;
+  if(!total){document.getElementById('alloc-preview').textContent='Please enter the total USD amount.';return;}
+  reviewCoins.forEach((c,i)=>{if(c&&allocCosts[i]!=null){c._cost=allocCosts[i].toFixed(2);c._retail=String(r5(allocCosts[i]));}});
+  closeModal('modal-alloc');
+  openReview();
+}
+
+// ── REVIEW ───────────────────────────────────────
+function openReview(){
+  const sub=document.getElementById('review-sub');
+  sub.textContent=reviewCoins.length+' coin'+(reviewCoins.length!==1?'s':'')+' — edit or remove before adding to queue';
+  document.getElementById('approve-btn').textContent='Add all '+reviewCoins.length+' to queue';
+  const cards=document.getElementById('review-cards');
+  cards.innerHTML=reviewCoins.map((c,i)=>buildRCard(c,i)).join('');
+  openModal('modal-review');
+}
+function buildRCard(c,i){
+  const rf=(key,label,val)=>`<div class="rfi"><label>${label}</label><input type="text" value="${(val||'').replace(/"/g,'&quot;')}" onchange="reviewCoins[${i}]['${key}']=this.value"/></div>`;
+  const rt=(key,label,val)=>`<div class="rfi"><label>${label}</label><textarea onchange="reviewCoins[${i}]['${key}']=this.value">${val||''}</textarea></div>`;
+  return`<div class="rcard" id="rc-${i}">
+    <div class="rcard-head"><div class="rcard-name">${c.name||'Unknown'}${c.reign?' ('+c.reign+')':''}</div><button class="rcard-del" onclick="removeRC(${i})">×</button></div>
+    <div class="g2">${rf('country','Culture',c.country)}${rf('name','Issuer',c.name)}${rf('reign','Reign',c.reign)}${rf('year','Mint year',c.year)}${rf('adbc','AD/BC',c.adbc)}${rf('metal','Metal',c.metal)}${rf('denomination','Denomination',c.denomination)}${rf('mmgm','Size/weight',c.mmgm)}${rf('mint','Mint city',c.mint)}${rf('refs','References',c.refs)}${rf('_cost','Cost paid $',c._cost)}${rf('_retail','Retail price $',c._retail)}</div>
+    ${rt('obverse','Obverse',c.obverse)}${rt('reverse','Reverse',c.reverse)}${rt('observations','Observations',c.observations)}${rt('provenance','Provenance (Ex...)',c.provenance)}
+  </div>`;
+}
+function removeRC(i){reviewCoins[i]=null;const card=document.getElementById('rc-'+i);if(card)card.style.display='none';const rem=reviewCoins.filter(Boolean).length;document.getElementById('review-sub').textContent=rem+' coins — edit or remove';document.getElementById('approve-btn').textContent='Add '+rem+' to queue';}
+function approveAll(){
+  const approved=reviewCoins.filter(Boolean);
+  if(!approved.length){closeModal('modal-review');return;}
+  const vendor=gv('f-vendor')||'Unknown';
+  approved.forEach(c=>{
+    queue.push({internalSKU:intSKU(c._cost),publicSKU:pubSKU(),seq:S.seq,country:c.country||'',name:c.name||'',reign:c.reign||'',year:c.year||'',adbc:c.adbc||'',metal:c.metal||'',denom:c.denomination||'',mmgm:c.mmgm||'',mint:c.mint||'',officina:c.officina||'',obverse:c.obverse||'',reverse:c.reverse||'',refs:c.refs||'',condition:c.observations||'',provenance:c.provenance||'',story:'',price:c._retail||'',cost:c._cost||'',vendor,lot:gv('f-lot'),date:gv('f-date'),location:gv('f-location'),status:gv('f-status')||'NEW',src:S.src,grade:'',photoObv:'',photoRev:'',photoStitch:''});
+    S.seq++;updSKU();
+  });
+  saveQ();renderQueue();closeModal('modal-review');
+  document.getElementById('intake-st').textContent=approved.length+' coin'+(approved.length!==1?'s':'')+' added to queue.';
+}
+
+// ── TEXT PARSE ───────────────────────────────────
+async function doParseText(){
+  const text=gv('attr-text').trim();if(!text)return;
+  const btn=document.getElementById('parse-btn');btn.className='btn sec dim';btn.textContent='Parsing...';
+  try{
+    const raw=await claude([{role:'user',content:`You are a numismatic expert. Parse this coin attribution and return ONLY a JSON object, no markdown. Use "" for missing fields.
+
+Fields: country, name, reign, year, adbc, metal, denomination, mmgm, mint (city only), officina, obverse (description only, NO D/ R/ Obv: Rev: prefixes), reverse (description only, NO prefixes), refs, observations, provenance
+
+Formatting rules:
+- name: the person/issuer name ONLY. Do NOT include role titles like "Moneyer", "Magistrate", "Consul", "Triumvir", etc.
+- denomination: Capitalize the first letter (e.g. "Denarius", "Antoninianus", "Tetradrachm").
+- mmgm: format as "26mm, 36.24g" with NO space between the number and its unit. Include whichever of diameter/weight are given.
+- provenance: any "Ex ..." pedigree or prior-collection info.
+
+Attribution:
+${text}`}],1000);
+    const p=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    sv('f-country',p.country);sv('f-name',p.name);sv('f-reign',p.reign);sv('f-year',p.year);sv('f-adbc',p.adbc);sv('f-metal',p.metal);sv('f-denom',p.denomination);sv('f-mmgm',p.mmgm);sv('f-mint',p.mint);sv('f-off',p.officina);sv('f-obv',strip(p.obverse));sv('f-rev',strip(p.reverse));sv('f-refs',p.refs);sv('f-prov',p.provenance);
+    document.getElementById('pfields').style.display='block';
+    btn.className='btn sec';btn.textContent='↺ Re-parse';
+  }catch(e){btn.className='btn sec';btn.textContent='✦ Parse text';document.getElementById('intake-st').textContent='Parse error: '+e.message;}
+}
+
+async function doStory(){
+  const name=gv('f-name'),country=gv('f-country'),reign=gv('f-reign'),denom=gv('f-denom'),mint=gv('f-mint');
+  if(!name&&!country){document.getElementById('intake-st').textContent='Parse attribution first.';return;}
+  document.getElementById('pfields').style.display='block';
+  const btn=document.getElementById('story-btn');btn.className='btn sec dim';btn.textContent='Writing...';
+  try{const s=await claude([{role:'user',content:`Write a vivid 2-3 sentence collector story for an ancient coin dealer tag. Under 60 words. Coin: ${country}, ${name}${reign?' ('+reign+')':''}, ${denom}${mint?', minted at '+mint:''}. Return only the story text.`}],300);sv('f-story',s.trim());btn.className='btn sec';btn.textContent='✍ Story';}
+  catch(e){btn.className='btn sec';btn.textContent='✍ Story';}
+}
+
+// ── PHOTOS ───────────────────────────────────────
+async function onPhoto(side,input){
+  const file=input.files[0];if(!file)return;
+  const slot=document.getElementById('ps-'+side);
+  const st=document.getElementById('photo-st');
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    slot.innerHTML=`<img src="${e.target.result}" alt="${side}" style="width:100%;height:100%;object-fit:cover"/>`;
+    if(!getScriptUrl()){photoLinks[side]='';st.textContent='⚠ Connect your sheet in Settings to store photos in Drive.';return;}
+    const sku=pubSKU();
+    st.textContent='Uploading '+side+' for '+sku+'…';
+    try{
+      const b64=e.target.result.split(',')[1];
+      const mime=file.type||'image/jpeg';
+      const d=await callScript('photo',{sku:sku,side:side,data:b64,mime:mime});
+      photoLinks[side]=d.url||'';
+      st.textContent='✓ '+side+' → Drive as '+(d.name||(sku+'_'+side));
+    }catch(err){photoLinks[side]='';st.textContent='✗ '+side+' upload failed: '+err.message;}
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── QUEUE ────────────────────────────────────────
+function collectCoin(){
+  const g=document.querySelector('.gb.on');
+  return{internalSKU:intSKU(),publicSKU:pubSKU(),seq:S.seq,country:gv('f-country'),name:gv('f-name'),reign:gv('f-reign'),year:gv('f-year'),adbc:gv('f-adbc'),metal:gv('f-metal'),denom:gv('f-denom'),mmgm:gv('f-mmgm'),mint:gv('f-mint'),officina:gv('f-off'),obverse:gv('f-obv'),reverse:gv('f-rev'),refs:gv('f-refs'),condition:gv('f-cond'),provenance:gv('f-prov'),story:gv('f-story'),price:gv('f-price'),cost:gv('f-cost'),vendor:gv('f-vendor'),lot:gv('f-lot'),date:gv('f-date'),location:gv('f-location'),status:gv('f-status')||'NEW',src:S.src,grade:g?g.dataset.g:'',photoObv:photoLinks.obv,photoRev:photoLinks.rev,photoStitch:photoLinks.stitch};
+}
+
+function resetForm(){
+  ['f-country','f-name','f-reign','f-year','f-adbc','f-metal','f-denom','f-mmgm','f-mint','f-off','f-obv','f-rev','f-refs','f-cond','f-prov','f-story','f-price','f-cost'].forEach(id=>sv(id,''));
+  sv('attr-text','');sv('f-status','NEW');document.getElementById('pfields').style.display='none';
+  // f-tray is left sticky for batch intake; clear only the square selection
+  traySquare='';applySquareHighlight();updLoc();
+  document.querySelectorAll('.gb.on').forEach(b=>b.classList.remove('on'));
+  Object.keys(condState).forEach(k=>{condState[k]='none';updPill(k);});
+  document.getElementById('cipher-out').textContent='—';document.getElementById('cipher-out').className='cipher';
+  ['obv','rev','stitch'].forEach(s=>{photoLinks[s]='';const slot=document.getElementById('ps-'+s);if(slot)slot.innerHTML=`<div class="photo-icon">📷</div><div class="photo-lbl">${s.charAt(0).toUpperCase()+s.slice(1)}</div><input type="file" id="ph-${s}" accept="image/*" style="display:none" onchange="onPhoto('${s}',this)"/>`;});
+  document.getElementById('photo-st').textContent='';
+  if(editIdx<0){S.seq++;updSKU();}
+  editIdx=-1;
+  document.getElementById('q-btn').textContent='+ Queue';document.getElementById('q-btn').onclick=()=>addToQueue();
+  document.getElementById('s-btn').textContent='+ Submit now';document.getElementById('s-btn').className='btn pri';document.getElementById('s-btn').onclick=()=>addToQueue(true);
+}
+
+function addToQueue(submitNow){
+  if(editIdx>=0){saveEdit();return;}
+  const coin=collectCoin();
+  if(!coin.vendor){document.getElementById('intake-st').textContent='Please enter a vendor.';return;}
+  if(!coin.cost){document.getElementById('intake-st').textContent='Please enter cost paid.';return;}
+  queue.push(coin);saveQ();renderQueue();resetForm();
+  document.getElementById('intake-st').textContent=`Added to queue (${queue.length} coin${queue.length>1?'s':''})`;
+  if(submitNow)submitAll();
+}
+
+function editQueueItem(i){
+  const c=queue[i];if(!c)return;editIdx=i;
+  sv('f-country',c.country);sv('f-name',c.name);sv('f-reign',c.reign);sv('f-year',c.year);sv('f-adbc',c.adbc);sv('f-metal',c.metal);sv('f-denom',c.denom);sv('f-mmgm',c.mmgm);sv('f-mint',c.mint);sv('f-off',c.officina);sv('f-obv',c.obverse);sv('f-rev',c.reverse);sv('f-refs',c.refs);sv('f-cond',c.condition);sv('f-prov',c.provenance);sv('f-story',c.story);sv('f-price',c.price);sv('f-cost',c.cost);sv('f-vendor',c.vendor);sv('f-lot',c.lot);sv('f-date',c.date);sv('f-status',c.status||'NEW');
+  {const loc=c.location||'';const mm=loc.match(/^(.*)-([A-D][1-6])$/);if(mm){sv('f-tray',mm[1]);traySquare=mm[2];}else{sv('f-tray',loc);traySquare='';}applySquareHighlight();updLoc();}
+  S.src=c.src||'AH';document.querySelectorAll('.src').forEach(b=>b.classList.toggle('on',b.dataset.code===S.src));
+  S.vfull=c.vendor;S.vcode='';onCost();
+  document.getElementById('pfields').style.display='block';
+  document.getElementById('intake-st').textContent='Editing coin '+(i+1)+' — make changes then tap Save';
+  document.getElementById('q-btn').textContent='💾 Save changes';document.getElementById('q-btn').onclick=saveEdit;
+  document.getElementById('s-btn').textContent='✕ Cancel';document.getElementById('s-btn').className='btn sec';document.getElementById('s-btn').onclick=()=>{editIdx=-1;resetForm();document.getElementById('intake-st').textContent='';};
+  window.scrollTo(0,0);
+}
+
+function saveEdit(){
+  if(editIdx<0)return;
+  const coin=collectCoin();coin.internalSKU=queue[editIdx].internalSKU;coin.publicSKU=queue[editIdx].publicSKU;coin.seq=queue[editIdx].seq;
+  queue[editIdx]=coin;editIdx=-1;saveQ();renderQueue();resetForm();
+  document.getElementById('intake-st').textContent='Changes saved.';
+}
+
+function removeFromQueue(i){queue.splice(i,1);saveQ();renderQueue();}
+
+function renderQueue(){
+  const wrap=document.getElementById('queue-wrap');const list=document.getElementById('queue-list');const cnt=document.getElementById('q-count');
+  if(!wrap||!list||!cnt)return;
+  cnt.textContent=queue.length;wrap.style.display=queue.length?'block':'none';
+  list.innerHTML=queue.map((c,i)=>`<div class="qi">
+    <div class="qi-info">
+      <div class="qi-sku">${c.internalSKU} · ${c.publicSKU}</div>
+      <div class="qi-name">${c.name||'Unknown'}</div>
+      <div class="qi-meta">${[c.country,c.metal,c.denom].filter(Boolean).join(' · ')}</div>
+      <div class="qi-meta">Cost: $${c.cost}${c.price?' · Retail: $'+c.price:''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+      <button class="sm" onclick="editQueueItem(${i})" style="font-size:11px">✏ Edit</button>
+      <button class="qi-del" onclick="removeFromQueue(${i})">×</button>
+    </div>
+  </div>`).join('');
+}
+
+async function submitAll(){
+  if(!queue.length)return;
+  const btn=document.getElementById('submit-all-btn');const st=document.getElementById('queue-st');
+  btn.textContent='Submitting...';btn.className='sm dim';st.textContent='';
+  try{
+    const rows=queue.map(c=>{
+      const notes='';  // Public SKU, Provenance, and Story now have dedicated columns
+      return[
+        c.internalSKU,                       // A  SKU
+        c.publicSKU||'',                     // B  Public SKU
+        c.price||'',                         // C  Price (retail)
+        c.country,                           // D  Country
+        c.name,                              // E  Name
+        c.reign,                             // F  Reign
+        c.metal,                             // G  Metal Type
+        c.denom,                             // H  Denomination
+        c.mmgm,                              // I  mm, gm
+        c.mint,                              // J  Mint Location
+        c.adbc,                              // K  AD/BC
+        c.year,                              // L  Mint Year
+        c.officina||'',                      // M  Officina
+        c.obverse,                           // N  Obverse
+        c.reverse,                           // O  Reverse
+        c.refs,                              // P  Refs
+        c.condition,                         // Q  Condition
+        c.provenance||'',                    // R  Provenance
+        notes,                               // S  Notes
+        c.story||'',                         // T  Story
+        c.cost?'$'+c.cost:'',                // U  Price Purchased (cost)
+        c.vendor+(c.lot?', Lot '+c.lot:''),  // V  Purchased From
+        c.date,                              // W  Purchase Date
+        '',                                  // X  Price Sold       (set on sale)
+        '',                                  // Y  Sold Date        (set on sale)
+        '',                                  // Z  Lot Number        (set on sale)
+        '',                                  // AA Venue Sold        (set on sale)
+        '',                                  // AB Client Name       (set on sale)
+        '',                                  // AC Client Address    (set on sale)
+        '',                                  // AD Gain (loss)       (set on sale)
+        '',                                  // AE Margin            (set on sale)
+        c.photoObv||'',                      // AF Obv Photo
+        c.photoRev||'',                      // AG Rev Photo
+        c.photoStitch||'',                   // AH Stitched Photo
+        c.location||'',                      // AI Location (tray)
+        c.status||'NEW'                      // AJ Status
+      ];
+    });
+    await sheetsAppend(rows);
+    btn.textContent='✓ Submitted';btn.className='sm ok';
+    st.textContent=`${queue.length} coin(s) written to sheet.`;
+    printSel=[...printSel,...queue];wnSel=[...wnSel,...queue];
+    queue=[];saveQ();renderQueue();fetchNextSeq();
+    setTimeout(()=>{btn.textContent='Submit all';btn.className='sm pri';},3000);
+  }catch(e){
+    btn.textContent='Failed';btn.className='sm';
+    st.textContent='Error: '+e.message;
+    setTimeout(()=>{btn.textContent='Submit all';btn.className='sm pri';},4000);
+  }
+}
+
+// ── SALE ─────────────────────────────────────────
+function onSaleSearch(){
+  const q=gv('sale-search').trim();
+  document.getElementById('sale-clear').style.display=q?'block':'none';
+  clearTimeout(saleSearchT);
+  if(q.length<2){document.getElementById('sale-results').innerHTML='';return;}
+  saleSearchT=setTimeout(()=>doSaleSearch(q),600);
+}
+function clearSale(){sv('sale-search','');document.getElementById('sale-clear').style.display='none';document.getElementById('sale-results').innerHTML='';document.getElementById('sale-form').style.display='none';selCoin=null;}
+async function doSaleSearch(q){
+  const res=document.getElementById('sale-results');res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px;text-align:center">Searching...</p>';
+  try{
+    const coins=await sheetsSearch(q);
+    if(!coins.length){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px;text-align:center">No coins found.</p>';return;}
+    res.innerHTML=coins.map(c=>`<div class="cc" onclick='pickCoin(${JSON.stringify(c).replace(/'/g,"&apos;")})' data-sku="${c.sku||c.public_sku}">
+      <div class="cc-sku">${c.sku||'—'} <span class="badge ${c.price_sold?'bd':'bs'}">${c.price_sold?'Sold':'Available'}</span></div>
+      <div class="cc-name">${c.name||'Unknown'}</div>
+      <div class="cc-meta">${[c.country,c.denomination,c.reign].filter(Boolean).join(' · ')}</div>
+      <div class="cc-cost">Cost: ${c.price_purchased||'—'}${c.location?' · 📍 '+c.location:''}</div>
+    </div>`).join('');
+  }catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px;text-align:center">Search error: '+e.message+'</p>';}
+}
+function pickCoin(coin){
+  selCoin=coin;
+  document.querySelectorAll('.cc').forEach(c=>c.classList.toggle('on',c.dataset.sku===(coin.sku||coin.public_sku)));
+  document.getElementById('sel-sku').textContent=coin.sku||'—';
+  document.getElementById('sel-name').textContent=coin.name||'Unknown';
+  document.getElementById('sel-meta').textContent=[coin.country,coin.denomination,coin.reign].filter(Boolean).join(' · ');
+  document.getElementById('sel-cost').textContent='Cost: '+(coin.price_purchased||'—');
+  document.getElementById('sale-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('sale-form').style.display='block';
+}
+function selVenue(b){document.querySelectorAll('.vb').forEach(x=>x.classList.remove('on'));b.classList.add('on');selVenueVal=b.dataset.v;document.getElementById('wn-extra').className=selVenueVal==='Whatnot'?'xf on':'xf';}
+async function doSale(){
+  if(!selCoin)return;
+  const btn=document.getElementById('sale-btn');const st=document.getElementById('sale-st');
+  const price=gv('sale-price');if(!price){st.textContent='Enter sale price.';return;}
+  if(!selVenueVal){st.textContent='Select a venue.';return;}
+  let venue=selVenueVal,lot='';
+  if(selVenueVal==='Whatnot'){const show=gv('wn-show');lot=gv('wn-lot');if(show)venue='Whatnot — '+show;}
+  btn.className='btn dim';btn.textContent='Recording...';st.textContent='';
+  const cost=parseFloat(String(selCoin.price_purchased||'0').replace(/[^0-9.]/g,''))||0;
+  const sale=parseFloat(price)||0;
+  const gain=(sale-cost).toFixed(2);
+  const margin=cost>0?((sale-cost)/cost*100).toFixed(1)+'%':'';
+  try{
+    // Writes to columns X..AE: Price Sold, Sold Date, Lot Number, Venue Sold, Client Name, Client Address, Gain, Margin
+    await sheetsUpdate(selCoin.row_number,'X',['$'+price,new Date().toISOString().split('T')[0],lot,venue,gv('buyer-name'),gv('buyer-addr'),'$'+gain,margin]);
+    btn.className='btn ok';btn.textContent='✓ Sale recorded';st.textContent=`Sold for $${price}.`;
+    setTimeout(()=>{btn.className='btn pri';btn.textContent='✓ Record sale';clearSale();},3000);
+  }catch(e){btn.className='btn err';btn.textContent='Failed';st.textContent='Error: '+e.message;setTimeout(()=>{btn.className='btn pri';btn.textContent='✓ Record sale';},3000);}
+}
+
+// ── PRINT TAGS ───────────────────────────────────
+function printFromQueue(){printSel=[...queue];renderPrintSel();}
+function printSearchShow(){document.getElementById('print-search-wrap').style.display='block';}
+function onPrintSearch(){const q=gv('print-search').trim();clearTimeout(printSearchT);if(q.length<2)return;printSearchT=setTimeout(()=>doPrintSearch(q),600);}
+async function doPrintSearch(q){
+  const res=document.getElementById('print-search-res');res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Searching...</p>';
+  try{
+    const coins=await sheetsSearch(q);
+    res.innerHTML=coins.map(c=>`<div class="cc" onclick='addToPrint(${JSON.stringify(c).replace(/'/g,"&apos;")})'>
+      <div class="cc-sku">${c.sku||'—'}</div><div class="cc-name">${c.name||'Unknown'}</div>
+      <div class="cc-meta">${[c.country,c.denomination].filter(Boolean).join(' · ')}</div>
+    </div>`).join('');
+  }catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Error: '+e.message+'</p>';}
+}
+function addToPrint(coin){if(!printSel.find(c=>c.sku===coin.sku||c.publicSKU===coin.public_sku))printSel.push(coin);renderPrintSel();}
+function removeFromPrint(i){printSel.splice(i,1);renderPrintSel();}
+function renderPrintSel(){
+  const list=document.getElementById('print-selected');const actions=document.getElementById('print-actions');
+  if(!printSel.length){list.innerHTML='';actions.style.display='none';return;}
+  list.innerHTML='<p class="lbl">Selected ('+printSel.length+')</p>'+printSel.map((c,i)=>`<div class="qi"><div class="qi-info"><div class="qi-sku">${c.publicSKU||c.sku||''}</div><div class="qi-name">${c.name||'Unknown'}</div></div><button class="qi-del" onclick="removeFromPrint(${i})">×</button></div>`).join('');
+  actions.style.display='block';
+  loadTagSizeInputs();
+  renderTagPreview();
+}
+
+// ── TAG SIZING ───────────────────────────────────
+const TAG_DEFAULT={w:1.75,h:1.75,f:6.5,cols:2};
+const TAG_PRESETS={s:{w:2,h:2,f:7.5,cols:1},m:{w:1.75,h:1.75,f:6.5,cols:2},l:{w:2.5,h:2.5,f:9,cols:1}};
+const PAGE_USABLE_W=7.6; // letter portrait, inside @page + body padding
+function tagSize(){
+  try{const s=JSON.parse(localStorage.getItem('hh_tagsize'));if(s&&s.w)return s;}catch(e){}
+  return{...TAG_DEFAULT};
+}
+function saveTagSize(s){localStorage.setItem('hh_tagsize',JSON.stringify(s));}
+function loadTagSizeInputs(){
+  const s=tagSize();
+  sv('ts-w',s.w);sv('ts-h',s.h);sv('ts-f',s.f);sv('ts-cols',s.cols);
+}
+function tagPreset(k){const p=TAG_PRESETS[k];if(!p)return;saveTagSize({...p});loadTagSizeInputs();renderTagPreview();}
+function onTagSize(){
+  const s={w:parseFloat(gv('ts-w'))||TAG_DEFAULT.w,h:parseFloat(gv('ts-h'))||TAG_DEFAULT.h,f:parseFloat(gv('ts-f'))||TAG_DEFAULT.f,cols:Math.max(1,Math.min(8,parseInt(gv('ts-cols'))||TAG_DEFAULT.cols))};
+  saveTagSize(s);renderTagPreview();
+}
+function renderTagPreview(){
+  const s=tagSize();
+  const note=document.getElementById('ts-note');
+  const pairW=s.w*2, used=pairW*s.cols, maxCols=Math.max(1,Math.floor(PAGE_USABLE_W/pairW));
+  if(note){
+    if(used>PAGE_USABLE_W+0.01){
+      note.innerHTML=`⚠ ${s.cols} tags across needs ${used.toFixed(1)} in but the page fits ~${PAGE_USABLE_W} in. Reduce to <b>${maxCols}</b> column${maxCols!==1?'s':''} or a smaller width, or tags will be cut off.`;
+      note.style.color='var(--danger-txt)';
+    }else{
+      const cells=s.cols*2;
+      note.innerHTML=`Each row prints <b>${s.cols}</b> tag${s.cols!==1?'s':''} = ${cells} cells: ${Array(s.cols).fill('info│logo').join(' │ ')}. Tag ${s.w}×${s.h} in, ${s.f}pt (max ${maxCols} across at this width).`;
+      note.style.color='var(--txt3)';
+    }
+  }
+  document.getElementById('tag-preview').innerHTML=printSel.map(c=>buildTagHTML(c,s)).join('');
+  // After layout, shrink any overflowing attribution text to fit its frame.
+  requestAnimationFrame(()=>document.querySelectorAll('#tag-preview .tag-txt').forEach(fitText));
+}
+function capDenom(d){d=(d||'').trim();return d?d.charAt(0).toUpperCase()+d.slice(1):'';}
+// Builds the attribution-side inner HTML. Order: header, metal·denom·size, mint,
+// Obv, Rev, Provenance (above Ref), Ref, surfaces (small grey), story.
+function tagInfoHTML(c){
+  const mint=c.mint||c.mintLocation||'';const adbc=c.adbc||'';const year=c.year||'';
+  const mintLine=[mint,year?(adbc?adbc+' ':'')+year:''].filter(Boolean).join(', ');
+  const line2=[c.metal||c.metalType||'',capDenom(c.denom||c.denomination||''),c.mmgm||''].filter(Boolean).join(' · ');
+  return`<div style="font-weight:700">${c.country||''}</div>`+
+    `<div style="font-weight:700">${c.name||''}${c.reign?' ('+c.reign+')':''}</div>`+
+    (line2?`<div>${line2}</div>`:'')+
+    (mintLine?`<div>${mintLine}</div>`:'')+
+    (c.obverse?`<div><b>Obv:</b> ${c.obverse}</div>`:'')+
+    (c.reverse?`<div><b>Rev:</b> ${c.reverse}</div>`:'')+
+    (c.provenance?`<div style="margin-top:1px">${c.provenance}</div>`:'')+
+    (c.refs?`<div><b>Ref:</b> ${c.refs}</div>`:'')+
+    (c.condition?`<div class="tag-surfaces" style="color:#888;font-style:italic">${c.condition}</div>`:'')+
+    (c.story?`<div style="margin-top:3px;border-top:.5px solid #444;padding-top:3px">${c.story}</div>`:'');
+}
+// Builds the back/logo side: logo, SKU + $price side by side (small), guarantee line.
+function tagBackHTML(c,fs){
+  const pub=c.publicSKU||c.sku||'';const price=c.price?'$'+c.price:'';
+  return (getLogo()?`<img src="${getLogo()}" alt="Handheld History"/>`:'')+
+    `<div style="line-height:1.5;color:#1a1a18;width:100%">`+
+      `<div style="display:flex;justify-content:center;gap:8px;font-size:${fs.sku}pt;font-weight:700"><span>${pub}</span><span>${price}</span></div>`+
+      `<div style="font-size:${fs.gtee}pt;color:#555;font-style:italic;margin-top:2px">All coins guaranteed for life.</div>`+
+    `</div>`;
+}
+// Shrinks an element's font until its content fits its fixed height (auto-scale).
+function fitText(el){
+  if(!el)return;
+  let pt=parseFloat(el.dataset.basept||el.style.fontSize)||8;
+  el.style.fontSize=pt+'pt';
+  let guard=0;
+  while(el.scrollHeight>el.clientHeight&&pt>3&&guard<60){pt-=0.3;el.style.fontSize=pt.toFixed(2)+'pt';guard++;}
+}
+function buildTagHTML(c,s){
+  s=s||tagSize();
+  const f=s.f;
+  const fs={sku:(f*1.05).toFixed(1),pr:(f*1.55).toFixed(1),ph:(f*0.95).toFixed(1),gtee:(f*0.85).toFixed(1),prov:(f*0.78).toFixed(1)};
+  return`<div class="tag-pair" style="width:${(s.w*2)}in;height:${s.h}in;display:grid;grid-template-columns:1fr 1fr;margin:0 auto 8px">
+    <div class="tag-txt" data-basept="${f}" style="font-size:${f}pt;line-height:1.3;overflow:hidden">${tagInfoHTML(c)}</div>
+    <div class="tag-logo">${tagBackHTML(c,fs)}</div>
+  </div>`;
+}
+function doPrint(){
+  if(!printSel.length)return;
+  const s=tagSize();const f=s.f;
+  const fs={sku:(f*1.05).toFixed(1),pr:(f*1.55).toFixed(1),ph:(f*0.95).toFixed(1),gtee:(f*0.85).toFixed(1),prov:(f*0.78).toFixed(1)};
+  const area=document.getElementById('print-area');
+  // Each tag = text half + logo half, both s.w wide; s.cols tags across the page.
+  area.style.gridTemplateColumns=`repeat(${s.cols}, ${s.w}in ${s.w}in)`;
+  area.innerHTML=printSel.map(c=>buildPrintPair(c,s,fs)).join('');
+  // The print area is hidden (display:none) so it can't be measured; reveal it
+  // off-screen, shrink overflowing text to fit, then print.
+  area.style.position='fixed';area.style.left='-9999px';area.style.top='0';area.style.display='grid';
+  requestAnimationFrame(()=>{
+    area.querySelectorAll('.pa-txt').forEach(fitText);
+    area.style.position='';area.style.left='';area.style.top='';area.style.display='';
+    window.print();
+  });
+}
+function buildPrintPair(c,s,fs){
+  const wh=`width:${s.w}in;height:${s.h}in`;const logoMaxH=(s.h*0.55).toFixed(2);
+  const back=getLogo()?`<img src="${getLogo()}" alt="HH" style="max-height:${logoMaxH}in"/>`:'';
+  const pub=c.publicSKU||c.sku||'';const price=c.price?'$'+c.price:'';
+  return`<div class="pa-txt" data-basept="${s.f}" style="${wh};font-size:${s.f}pt">${tagInfoHTML(c)}</div>`+
+    `<div class="pa-logo" style="${wh}">${back}<div style="line-height:1.5;color:#1a1a18;width:100%"><div style="display:flex;justify-content:center;gap:8px;font-size:${fs.sku}pt;font-weight:700"><span>${pub}</span><span>${price}</span></div><div style="font-size:${fs.gtee}pt;color:#555;font-style:italic;margin-top:2px">All coins guaranteed for life.</div></div></div>`;
+}
+
+// ── WHATNOT ──────────────────────────────────────
+function wnFromQueue(){wnSel=[...queue];renderWN();}
+function wnSearchShow(){document.getElementById('wn-search-wrap').style.display='block';}
+function onWnSearch(){const q=gv('wn-search').trim();clearTimeout(wnSearchT);if(q.length<2)return;wnSearchT=setTimeout(()=>doWNSearch(q),600);}
+async function doWNSearch(q){
+  const res=document.getElementById('wn-search-res');res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Searching...</p>';
+  try{const coins=await sheetsSearch(q);res.innerHTML=coins.map(c=>`<div class="cc" onclick='addToWN(${JSON.stringify(c).replace(/'/g,"&apos;")})' data-sku="${c.sku}"><div class="cc-sku">${c.sku||'—'}</div><div class="cc-name">${c.name||'Unknown'}</div><div class="cc-meta">${[c.country,c.denomination].filter(Boolean).join(' · ')}</div></div>`).join('');}
+  catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Error: '+e.message+'</p>';}
+}
+function addToWN(coin){if(!wnSel.find(c=>c.sku===coin.sku))wnSel.push(coin);renderWN();}
+function removeFromWN(i){wnSel.splice(i,1);renderWN();}
+function renderWN(){
+  const list=document.getElementById('wn-list');const actions=document.getElementById('wn-actions');
+  if(!wnSel.length){list.innerHTML='';actions.style.display='none';return;}
+  actions.style.display='block';
+  list.innerHTML=wnSel.map((c,i)=>{const retail=parseFloat(c.price)||0;const wp=retail>0?Math.round(retail*1.10):0;return`<div class="wn-row"><div class="wn-info"><div class="wn-sku">${c.publicSKU||c.sku||''}</div><div class="wn-name">${c.name||'Unknown'}</div><div class="wn-price">${wp?'Whatnot: $'+wp:'No retail price'}</div></div><button class="qi-del" onclick="removeFromWN(${i})">×</button></div>`;}).join('');
+}
+function buildWNTitle(c){return[c.name||c.country||'Ancient Coin',c.denom||c.denomination,c.metal,c.reign,c.grade].filter(Boolean).join(' ').slice(0,80);}
+function buildWNDesc(c){const parts=[];if(c.country)parts.push(c.country+'.');if(c.name&&c.reign)parts.push(c.name+' ('+c.reign+').');if(c.metal&&(c.denom||c.denomination))parts.push(c.metal+' '+(c.denom||c.denomination)+(c.mmgm?' ('+c.mmgm+')':'')+'.');if(c.mint)parts.push('Mint: '+c.mint+'.');if(c.obverse)parts.push('Obv: '+c.obverse);if(c.reverse)parts.push('Rev: '+c.reverse);if(c.refs)parts.push('Ref: '+c.refs);if(c.condition)parts.push(c.condition);if(c.provenance)parts.push(c.provenance);if(c.story)parts.push(c.story);parts.push('All coins guaranteed for life. (301) 542-4840');return parts.join(' ');}
+function dlWN(){
+  const headers=['Category','Sub Category','Title','Description','Quantity','Type','Price','Shipping Profile','Attribute: Product Type','Offerable','Condition','Cost Per Item','SKU'];
+  const rows=wnSel.map(c=>{const retail=parseFloat(c.price)||0;const wp=retail>0?Math.round(retail*1.10).toFixed(2):'';return['Coins & Paper Money','Ancient Coins',csvEsc(buildWNTitle(c)),csvEsc(buildWNDesc(c)),'1','Auction',wp,'1-3 Oz','Ancient Coins','Yes',gradeToWN(c.grade||''),c.cost||'',c.publicSKU||c.sku||''];});
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='handheld_history_whatnot_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
+}
+function exportWN(){wnSel=[...queue];go('whatnot');renderWN();}
+
+// ── LOCATE / PULL ────────────────────────────────
+let locSearchT=null;
+const STATUSES=['NEW','BASIC','COMPLETE','TAGGED','LISTED','SOLD'];
+function onLocSearch(){
+  const q=gv('loc-search').trim();clearTimeout(locSearchT);
+  const res=document.getElementById('loc-results');
+  if(q.length<2){res.innerHTML='';return;}
+  locSearchT=setTimeout(()=>doLocSearch(q),500);
+}
+async function doLocSearch(q){
+  const res=document.getElementById('loc-results');
+  res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Searching...</p>';
+  try{
+    const coins=await sheetsSearch(q);
+    if(!coins.length){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">No coins found.</p>';return;}
+    res.innerHTML=coins.map(c=>locCard(c)).join('');
+  }catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Error: '+e.message+'</p>';}
+}
+function locCard(c){
+  const where=c.location?`<span class="big">${c.location}</span>`:'<span style="color:var(--txt3);font-size:13px">no tray set</span>';
+  const opts=STATUSES.map(s=>`<option value="${s}"${(c.status||'NEW')===s?' selected':''}>${s}</option>`).join('');
+  return`<div class="loc-card" id="loc-${c.row_number}">
+    <div class="qi-sku">${c.sku||''}${c.public_sku?' · '+c.public_sku:''}</div>
+    <div class="qi-name" style="white-space:normal">${c.name||'Unknown'}${c.reign?' ('+c.reign+')':''}</div>
+    <div class="qi-meta">${[c.country,c.metal,c.denomination].filter(Boolean).join(' · ')}</div>
+    <div class="loc-where">📍 ${where}</div>
+    <div class="loc-row">
+      <input type="text" id="locin-${c.row_number}" placeholder="Move to… e.g. A-014-C3" value="${(c.location||'').replace(/"/g,'&quot;')}"/>
+      <button class="sm pri" onclick="updateLocation(${c.row_number})">Save tray</button>
+    </div>
+    <div class="loc-row">
+      <select id="stin-${c.row_number}" onchange="updateStatus(${c.row_number})">${opts}</select>
+    </div>
+    <div class="status" id="locst-${c.row_number}"></div>
+  </div>`;
+}
+async function updateLocation(row){
+  const v=gv('locin-'+row).trim();const st=document.getElementById('locst-'+row);
+  st.textContent='Saving…';
+  try{await sheetsUpdate(row,'AI',[v]);st.textContent='✓ Tray set to '+(v||'(blank)');
+    const card=document.getElementById('loc-'+row);const big=card&&card.querySelector('.big');
+    if(big)big.textContent=v;else if(card){const w=card.querySelector('.loc-where');if(w)w.innerHTML='📍 <span class="big">'+v+'</span>';}
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+async function updateStatus(row){
+  const v=gv('stin-'+row);const st=document.getElementById('locst-'+row);
+  st.textContent='Saving…';
+  try{await sheetsUpdate(row,'AJ',[v]);st.textContent='✓ Status: '+v;loadStats();}
+  catch(e){st.textContent='Error: '+e.message;}
+}
+async function loadStats(){
+  const box=document.getElementById('status-summary');if(!box)return;
+  if(!getScriptUrl()){box.innerHTML='<span style="font-size:12px;color:var(--txt3)">Connect your sheet in Settings to see status counts.</span>';return;}
+  box.innerHTML='<span style="font-size:12px;color:var(--txt3)">Loading status counts…</span>';
+  try{
+    const d=await callScript('stats',{});const c=d.counts||{};
+    box.innerHTML=STATUSES.map(s=>`<span class="schip st-${s}">${s} <b>${c[s]||0}</b></span>`).join('')+`<span class="schip">TOTAL <b>${d.total||0}</b></span>`;
+  }catch(e){box.innerHTML='<span style="font-size:12px;color:var(--danger-txt)">Status counts unavailable: '+e.message+'</span>';}
+}
+
+// ── SETTINGS ─────────────────────────────────────
+function loadSettings(){
+  const k=getKey();
+  const kd=document.getElementById('key-display');if(kd)kd.value=k?k.slice(0,20)+'...':'(not set)';
+  const u=getScriptUrl();const s=getSecret();
+  const cs=document.getElementById('conn-status');
+  if(cs){cs.textContent=u?('✓ URL saved'+(s?' + secret':' — add a secret below')):'Not set — add your web app URL below';cs.style.color=u&&s?'var(--accent)':'var(--warn)';}
+  const lg=getLogo();const ls=document.getElementById('logo-status');const lp=document.getElementById('logo-prev');
+  if(ls){ls.textContent=lg?'✓ Logo set':'No logo set';ls.style.color=lg?'var(--accent)':'var(--txt2)';}
+  if(lp)lp.innerHTML=lg?`<img src="${lg}" alt="logo" style="max-height:60px;max-width:160px;background:#f5f4e8;padding:6px;border-radius:8px"/>`:'';
+}
+function onLogoFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{localStorage.setItem('hh_logo',e.target.result);loadSettings();
+      const out=document.getElementById('test-out');out.style.display='block';out.textContent='✓ Logo saved. It will appear on printed tags.';
+    }catch(err){alert('Logo too large to store. Try a smaller image (under ~1MB).');}
+  };
+  reader.readAsDataURL(file);
+}
+function clearLogo(){localStorage.removeItem('hh_logo');loadSettings();}
+function saveKey(){
+  const v=gv('key-input').trim();
+  if(!v){alert('Please paste your API key.');return;}
+  if(!v.startsWith('sk-ant-')){alert('Key must start with sk-ant-');return;}
+  localStorage.setItem('hh_key',v);sv('key-input','');loadSettings();
+  const out=document.getElementById('test-out');out.style.display='block';out.textContent='✓ API key saved.';
+}
+function saveConn(){
+  const u=gv('url-input').trim();const s=gv('secret-input').trim();
+  if(!u){alert('Paste your Apps Script web app URL (the /exec link).');return;}
+  if(!/^https:\/\/script\.google\.com\/.*\/exec$/.test(u)){if(!confirm('That doesn\u2019t look like a /exec URL. Save anyway?'))return;}
+  localStorage.setItem('hh_url',u);
+  if(s)localStorage.setItem('hh_secret',s);
+  sv('url-input','');sv('secret-input','');loadSettings();
+  const out=document.getElementById('test-out');out.style.display='block';out.textContent='✓ Connection saved.';
+}
+async function testAll(){
+  const out=document.getElementById('test-out');out.style.display='block';out.textContent='Testing...\n';
+  let txt='';
+  // Test Anthropic
+  const key=getKey();
+  if(!key){txt+='❌ No API key set.\n';}
+  else{try{const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:10,messages:[{role:'user',content:'Hi'}]})});const d=await resp.json();txt+=d.error?'❌ Anthropic: '+d.error.message+'\n':'✓ Anthropic API working.\n';}catch(e){txt+='❌ Anthropic: '+e.message+'\n';}}
+  // Test Sheets connection
+  const u=getScriptUrl();
+  if(!u){txt+='❌ No Apps Script URL set.\n';}
+  else{try{const d=await callScript('ping',{});txt+='✓ Connected to sheet: '+(d.title||'OK')+'\n';}catch(e){txt+='❌ Sheets: '+e.message+'\n';}}
+  out.textContent=txt;
+}
+function nukeAll(){if(confirm('Clear everything?')){localStorage.clear();queue=[];renderQueue();alert('Done. Reload the app.');}}
+
+// ── INIT ─────────────────────────────────────────
+document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+buildPills();
+buildTrayGrid();
+loadQ();
+fetchNextSeq();
+renderQueue();
+updSKU();
+</script>
+</body>
+</html>
