@@ -1,0 +1,2379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Handheld History</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --txt:#f0efe8;--txt2:#a0a09a;--txt3:#686864;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+  --accent:#4a9960;--accent-bg:#1a2e1e;--accent-txt:#7dd494;
+  --danger:#e05a4a;--danger-bg:#2a1a18;--danger-txt:#f0958a;
+  --success:#4aaa65;--success-bg:#182a1e;--success-txt:#80d49a;
+  --info:#5a8ae0;--info-bg:#18222a;--info-txt:#90b4f0;
+  --warn:#c9952a;--warn-bg:#2a2010;--warn-txt:#f0c060;
+  --r:10px;--rl:14px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:'SF Mono','Fira Code',monospace
+}
+body{font-family:var(--font);background:var(--bg3);color:var(--txt);min-height:100vh}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto}
+.tab{flex:0 0 auto;padding:12px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--txt3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none;padding:1rem;max-width:480px;margin:0 auto;padding-bottom:4rem}
+.panel.on{display:block}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);margin:1.1rem 0 .4rem}
+.lbl.t{margin-top:.25rem}
+input,textarea,select{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--txt);font-family:var(--font);-webkit-appearance:none}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;line-height:1.5}
+input::placeholder,textarea::placeholder{color:var(--txt3)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hr{height:1px;background:var(--border);margin:1.1rem 0}
+.btn{width:100%;padding:12px;font-size:14px;font-weight:600;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;border:1px solid var(--border2);background:var(--bg);color:var(--txt);margin-top:.6rem}
+.btn:active{transform:scale(.98)}
+.btn.dim{opacity:.4;pointer-events:none}
+.btn.ok{border-color:var(--accent);color:var(--accent-txt);background:var(--accent-bg)}
+.btn.err{border-color:var(--danger);color:var(--danger-txt);background:var(--danger-bg)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sec{background:var(--bg2);border-color:var(--border)}
+.brow{display:flex;gap:8px;margin-top:.6rem}
+.brow .btn{margin-top:0;flex:1}
+.sm{padding:6px 11px;font-size:12px;font-weight:600;border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border2);background:var(--bg);color:var(--txt)}
+.sm.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.sm.ok{background:var(--success-bg);border-color:var(--success);color:var(--success-txt)}
+.sm.dim{opacity:.4;pointer-events:none}
+.status{font-size:13px;text-align:center;margin-top:8px;color:var(--txt2);min-height:16px}
+.src-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.src{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;text-align:left}
+.src.on{border:2px solid var(--accent);background:var(--accent-bg)}
+.src-code{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:2px}
+.src-lbl{font-size:13px;color:var(--txt)}
+.vwrap{position:relative}
+.sugg{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.si{padding:10px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);color:var(--txt)}
+.si:last-child{border-bottom:none}
+.sc{font-size:11px;color:var(--txt3);margin-left:6px}
+.crow{display:flex;gap:8px;align-items:center}
+.crow input{flex:1}
+.cipher{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:14px;font-weight:600;letter-spacing:.1em;color:var(--txt3);min-width:76px;text-align:center;font-family:var(--mono)}
+.cipher.on{color:var(--accent);border-color:var(--accent)}
+.sku-box{background:var(--bg2);border-radius:var(--rl);padding:1rem 1.25rem;border:1px solid var(--border);margin-top:1rem}
+.sku-lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.sku-val{font-family:var(--mono);font-size:14px;word-break:break-all;line-height:1.5}
+.seg{color:var(--txt3)}.seg.on{color:var(--txt)}
+.pub{font-size:13px;color:var(--txt2);margin-top:4px}
+.pub span{font-family:var(--mono);color:var(--txt);font-weight:600}
+.pf{display:flex;flex-direction:column;gap:7px;margin-top:.75rem}
+.fi{display:flex;flex-direction:column;gap:3px}
+.fi label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.fi input,.fi textarea{padding:8px 10px;font-size:13px;background:var(--bg2)}
+.fi textarea{min-height:50px}
+.grade-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.gb{padding:5px 9px;font-size:12px;font-weight:600;border-radius:20px;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--txt3);white-space:nowrap}
+.gb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.cg{margin-top:.6rem}
+.cg-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.pills{display:flex;flex-wrap:wrap;gap:4px}
+.pill{position:relative;padding:5px 9px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:20px;cursor:pointer;color:var(--txt2);user-select:none}
+.pill.on{background:var(--info-bg);border-color:var(--info);color:var(--info-txt)}
+.pill.obv{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-txt)}
+.pill.rev{background:var(--warn-bg);border-color:var(--warn);color:var(--warn-txt)}
+.stag{font-size:9px;font-weight:700;margin-left:3px}
+.pop{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:4px;z-index:300;box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:nowrap;flex-direction:row;gap:3px}
+.pop.on{display:flex}
+.po{padding:4px 8px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--txt)}
+.qi{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px}
+.qi-info{flex:1;min-width:0}
+.qi-sku{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.qi-name{font-size:13px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi-meta{font-size:12px;color:var(--txt2)}
+.qi-del{background:none;border:none;color:var(--txt3);font-size:20px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0}
+.venue-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vb{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px;font-size:13px;font-weight:500;cursor:pointer;color:var(--txt);text-align:center}
+.vb.on{border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent-txt)}
+.xf{display:none;flex-direction:column;gap:8px}
+.xf.on{display:flex}
+.cc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;margin-top:8px;cursor:pointer}
+.cc.on{border:2px solid var(--accent);background:var(--accent-bg)}
+.cc-sku{font-family:var(--mono);font-size:12px;color:var(--txt3);margin-bottom:3px}
+.cc-name{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.cc-meta,.cc-cost{font-size:12px;color:var(--txt2)}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.bs{background:var(--success-bg);color:var(--success-txt)}
+.bd{background:var(--danger-bg);color:var(--danger-txt)}
+.upload-area{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer;background:var(--bg2);margin-bottom:.75rem;position:relative}
+.upload-preview{display:none;position:relative}
+.upload-preview img{max-width:100%;max-height:180px;border-radius:var(--r);object-fit:contain}
+.upload-clr{position:absolute;top:4px;right:4px;background:var(--danger);border:none;color:white;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+.photo-area{display:flex;gap:8px;margin-top:.5rem}
+.photo-slot{flex:1;border:1.5px dashed var(--border2);border-radius:var(--r);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--bg2);overflow:hidden;position:relative}
+.photo-slot img{width:100%;height:100%;object-fit:cover}
+.photo-icon{font-size:24px;color:var(--txt3)}
+.photo-lbl{font-size:10px;font-weight:600;color:var(--txt3);margin-top:4px}
+.tag-pair{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.tag-txt{padding:8px;background:#ffffff;font-size:8.5px;line-height:1.4;color:#1a1a18;border-right:1px solid #ccc}
+.tag-logo{position:relative;padding:8px;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center}
+.tag-logo img{width:100%;max-width:110px}
+.wn-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);margin-bottom:5px}
+.wn-info{flex:1;min-width:0}
+.wn-sku{font-family:var(--mono);font-size:11px;color:var(--txt3)}
+.wn-name{font-size:13px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wn-price{font-size:12px;color:var(--accent);font-weight:600}
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:500;overflow-y:auto}
+.modal.on{display:block}
+.modal-box{background:var(--bg);margin:1rem auto;border-radius:var(--rl);overflow:hidden;max-width:480px}
+.modal-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10}
+.modal-title{font-size:15px;font-weight:600}
+.modal-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.modal-close{background:none;border:none;font-size:22px;color:var(--txt3);cursor:pointer;line-height:1;padding:4px}
+.modal-body{padding:1rem;display:flex;flex-direction:column;gap:10px}
+.modal-foot{padding:1rem;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg)}
+.modal-foot .btn{margin:0;flex:1}
+.rcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;position:relative}
+.rcard-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.75rem}
+.rcard-name{font-size:13px;font-weight:600}
+.rcard-del{background:none;border:none;font-size:18px;color:var(--txt3);cursor:pointer;line-height:1;padding:2px;flex-shrink:0}
+.rfi{display:flex;flex-direction:column;gap:2px}
+.rfi label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.rfi input,.rfi textarea{padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--txt);font-family:var(--font);width:100%}
+.rfi textarea{min-height:44px;resize:vertical;line-height:1.4}
+.settings-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;display:flex;flex-direction:column;gap:6px}
+.settings-row label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.settings-row input{padding:8px 10px;font-size:12px;font-family:var(--mono);background:var(--bg)}
+.test-out{font-size:13px;line-height:1.7;background:var(--bg2);border-radius:var(--r);padding:.75rem;white-space:pre-wrap;margin-top:.5rem;display:none}
+.schip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--bg);border:1px solid var(--border)}
+.schip b{font-family:var(--mono);font-size:13px}
+.st-NEW{color:var(--info-txt);border-color:var(--info)}
+.st-PENDING{color:#c89b3c;border-color:#c89b3c}
+.st-BASIC{color:var(--warn-txt);border-color:var(--warn)}
+.st-COMPLETE{color:var(--accent-txt);border-color:var(--accent)}
+.st-TAGGED{color:var(--success-txt);border-color:var(--success)}
+.st-LISTED{color:var(--txt);border-color:var(--border2)}
+.st-SOLD{color:var(--danger-txt);border-color:var(--danger)}
+.loc-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;margin-top:8px}
+.loc-where{display:flex;align-items:center;gap:8px;margin:8px 0}
+.loc-where .big{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent-txt);background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--r);padding:4px 12px}
+.loc-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.loc-row input,.loc-row select{flex:1;min-width:120px;padding:8px 10px;font-size:13px}
+.tray-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:6px}
+.tsq{padding:10px 0;font-size:12px;font-weight:600;font-family:var(--mono);border:1px solid var(--border2);border-radius:8px;background:var(--bg);color:var(--txt2);cursor:pointer;text-align:center;user-select:none}
+.tsq.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#print-area{display:none}
+#print-area .pa-txt{padding:5px;border:.5px solid #ccc;line-height:1.3;overflow:hidden;background:#ffffff;color:#1a1a18}
+#print-area .pa-logo{position:relative;padding:6px;border:.5px solid #ccc;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center}
+#print-area .pa-logo img{object-fit:contain}
+@media print{
+  body>*{display:none!important}
+  #print-area{display:grid!important;justify-content:start;gap:0}
+  @page{size:letter portrait;margin:.2in}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+@media screen{.no-print{}}
+@media print{.tabs,.no-print{display:none!important}}
+</style>
+</head>
+<body>
+
+<div id="print-area"></div>
+
+<div class="tabs">
+  <div class="tab on" onclick="go('intake')">＋ Intake</div>
+  <div class="tab" onclick="go('sale')">⊙ Sale</div>
+  <div class="tab" onclick="go('print')">⎙ Tags</div>
+  <div class="tab" onclick="go('whatnot')">▲ Whatnot</div>
+  <div class="tab" onclick="go('locate')">📍 Locate</div>
+  <div class="tab" onclick="go('expense')">💵 Expenses</div>
+  <div class="tab" onclick="go('dash')">📊 Dashboard</div>
+  <div class="tab" onclick="go('settings')">⚙ Settings</div>
+</div>
+
+<!-- INTAKE -->
+<div class="panel on" id="panel-intake">
+  <p class="lbl t">Attribution / description</p>
+  <div class="upload-area" id="upload-area" onclick="document.getElementById('inv-file').click()">
+    <div id="upload-ph"><div style="font-size:26px">📄</div><div style="font-size:13px;font-weight:600;color:var(--txt2)">Take or upload a photo / screenshot</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">Invoice, tag, lot sheet · Parses 1–20+ coins</div><div style="font-size:11px;color:var(--warn);margin-top:2px;font-weight:600">📌 For PDFs: screenshot first</div></div>
+    <div class="upload-preview" id="upload-prev"><img id="upload-img" alt=""/><button class="upload-clr" onclick="clearUpload(event)">×</button></div>
+    <input type="file" id="inv-file" accept="image/*" style="display:none" onchange="onInvFile(this)"/>
+  </div>
+  <button class="btn sec" id="extract-btn" style="display:none;margin-bottom:.5rem" onclick="doExtract()">🔍 Extract coins from image</button>
+  <textarea id="attr-text" rows="3" placeholder="Or paste text attribution here..."></textarea>
+  <div class="brow">
+    <button class="btn sec" id="parse-btn" onclick="doParseText()">✦ Parse text</button>
+    <button class="btn sec" id="story-btn" onclick="doStory()">✍ Story</button>
+    <button class="btn sec" id="context-btn" onclick="doContext()">🏛 Context</button>
+    <button class="btn sec" id="ref-btn" onclick="doRefSuggest()">🔎 Suggest ref</button>
+  </div>
+  <div id="ref-out" style="display:none;font-size:12px;background:var(--bg2);border-radius:var(--r);padding:.6rem;margin-top:.5rem;line-height:1.5"></div>
+  <div class="cg-lbl" style="margin-top:.6rem">Look up / verify on</div>
+  <div class="brow" style="flex-wrap:wrap">
+    <button class="btn sec" onclick="openRef('acsearch')">ACSearch ↗</button>
+    <button class="btn sec" onclick="openRef('rpc')">RPC ↗</button>
+    <button class="btn sec" onclick="openRef('ocre')">OCRE ↗</button>
+    <button class="btn sec" onclick="openRef('crro')">CRRO ↗</button>
+    <button class="btn sec" onclick="openRef('wildwinds')">WildWinds ↗</button>
+    <button class="btn sec" onclick="openRef('coincabinet')">Coin Cabinet ↗</button>
+  </div>
+
+  <div id="pfields" style="display:none">
+    <div class="hr" style="margin-bottom:.5rem"></div>
+    <div class="pf">
+      <div class="g2">
+        <div class="fi"><label>Country / culture</label><input id="f-country" type="text"/></div>
+        <div class="fi"><label>Issuer / name</label><input id="f-name" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Reign</label><input id="f-reign" type="text"/></div>
+        <div class="fi"><label>Mint year</label><input id="f-year" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Metal</label><input id="f-metal" type="text"/></div>
+        <div class="fi"><label>Denomination</label><input id="f-denom" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Size / weight</label><input id="f-mmgm" type="text"/></div>
+        <div class="fi"><label>Mint city</label><input id="f-mint" type="text"/></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>AD / BC</label><input id="f-adbc" type="text"/></div>
+        <div class="fi"><label>Officina</label><input id="f-off" type="text"/></div>
+      </div>
+      <div class="fi"><label>Obverse</label><textarea id="f-obv"></textarea></div>
+      <div class="fi"><label>Reverse</label><textarea id="f-rev"></textarea></div>
+      <div class="fi"><label>References</label><input id="f-refs" type="text"/></div>
+
+      <div style="margin-top:.5rem">
+        <div class="cg-lbl">Grade</div>
+        <div class="grade-wrap" id="grade-btns">
+          <button class="gb" data-g="Poor" onclick="selGrade(this)">Poor</button>
+          <button class="gb" data-g="AG" onclick="selGrade(this)">AG</button>
+          <button class="gb" data-g="G" onclick="selGrade(this)">G</button>
+          <button class="gb" data-g="Ch G" onclick="selGrade(this)">Ch G</button>
+          <button class="gb" data-g="aVF" onclick="selGrade(this)">aVF</button>
+          <button class="gb" data-g="VF" onclick="selGrade(this)">VF</button>
+          <button class="gb" data-g="Ch VF" onclick="selGrade(this)">Ch VF</button>
+          <button class="gb" data-g="aXF" onclick="selGrade(this)">aXF</button>
+          <button class="gb" data-g="XF" onclick="selGrade(this)">XF</button>
+          <button class="gb" data-g="Ch XF" onclick="selGrade(this)">Ch XF</button>
+          <button class="gb" data-g="aAU" onclick="selGrade(this)">aAU</button>
+          <button class="gb" data-g="AU" onclick="selGrade(this)">AU</button>
+          <button class="gb" data-g="Ch AU" onclick="selGrade(this)">Ch AU</button>
+          <button class="gb" data-g="MS" onclick="selGrade(this)">MS</button>
+        </div>
+      </div>
+      <div class="cg"><div class="cg-lbl">Surface</div><div class="pills" id="p-surface"></div></div>
+      <div class="cg"><div class="cg-lbl">Strike &amp; centering</div><div class="pills" id="p-strike"></div></div>
+      <div class="cg"><div class="cg-lbl">Toning</div><div class="pills" id="p-toning"></div></div>
+      <div class="cg"><div class="cg-lbl">Eye appeal</div><div class="pills" id="p-appeal"></div></div>
+      <div class="cg"><div class="cg-lbl">Other (type your own, comma-separated)</div>
+        <input id="f-cond-other" type="text" placeholder="e.g. mount removed, repatinated" oninput="assembleCondition()"/>
+      </div>
+      <div class="fi"><label>Condition note</label><textarea id="f-cond" rows="2" placeholder="Auto-assembled above, or type freely..."></textarea></div>
+      <div class="fi"><label>Provenance (Ex...)</label><input id="f-prov" type="text" placeholder="Ex Artemide LXV, 2026, lot 71"/></div>
+      <div class="fi"><label>Story — tag version (short, ~45-60 words)</label><textarea id="f-story" rows="3" placeholder="Historical context for the tag..."></textarea></div>
+      <div class="fi"><label>Story — livestream version (longer, read aloud)</label><textarea id="f-story-long" rows="4" placeholder="Fuller version for Whatnot..."></textarea></div>
+      <div id="story-lib-status" style="font-size:11px;color:var(--txt3);margin-top:-2px;margin-bottom:6px"></div>
+      <button class="btn sec" onclick="saveStoryToLib()" style="margin-bottom:8px">💾 Save story to library (by reference)</button>
+      <div class="fi"><label>Retail price (USD)</label><input id="f-price" type="number" placeholder="e.g. 175" oninput="this.dataset.manual=1"/></div>
+
+      <div style="margin-top:.5rem">
+        <div class="cg-lbl">Photos</div>
+        <div class="photo-area">
+          <div class="photo-slot" id="ps-obv" onclick="document.getElementById('ph-obv').click()">
+            <div class="photo-icon">📷</div><div class="photo-lbl">Obverse</div>
+            <input type="file" id="ph-obv" accept="image/*" style="display:none" onchange="onPhoto('obv',this)"/>
+          </div>
+          <div class="photo-slot" id="ps-rev" onclick="document.getElementById('ph-rev').click()">
+            <div class="photo-icon">📷</div><div class="photo-lbl">Reverse</div>
+            <input type="file" id="ph-rev" accept="image/*" style="display:none" onchange="onPhoto('rev',this)"/>
+          </div>
+          <div class="photo-slot" id="ps-stitch" onclick="document.getElementById('ph-stitch').click()">
+            <div class="photo-icon">📷</div><div class="photo-lbl">Stitched</div>
+            <input type="file" id="ph-stitch" accept="image/*" style="display:none" onchange="onPhoto('stitch',this)"/>
+          </div>
+        </div>
+        <div id="photo-st" style="font-size:11px;color:var(--txt3);margin-top:4px;min-height:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+  <p class="lbl" style="margin-top:0">Source type</p>
+  <div class="src-grid">
+    <button class="src" data-code="AH" onclick="selSrc(this)"><div class="src-code">AH</div><div class="src-lbl">Auction house</div></button>
+    <button class="src" data-code="DT" onclick="selSrc(this)"><div class="src-code">DT</div><div class="src-lbl">Dealer trade</div></button>
+    <button class="src" data-code="DP" onclick="selSrc(this)"><div class="src-code">DP</div><div class="src-lbl">Direct / private</div></button>
+    <button class="src" data-code="BL" onclick="selSrc(this)"><div class="src-code">BL</div><div class="src-lbl">Bulk lot</div></button>
+    <button class="src" data-code="CN" onclick="selSrc(this)"><div class="src-code">CN</div><div class="src-lbl">Consignment</div></button>
+  </div>
+  <div id="consign-fields" style="display:none;background:var(--bg2);border-radius:var(--r);padding:.75rem;margin-top:.6rem">
+    <div class="g2">
+      <div>
+        <p class="lbl" style="margin-top:0">Consignor name</p>
+        <input id="f-consignor" type="text" placeholder="e.g. John Smith" oninput="updSKU()"/>
+      </div>
+      <div>
+        <p class="lbl" style="margin-top:0">Your cut (%)</p>
+        <input id="f-consign-pct" type="number" placeholder="e.g. 20" oninput="updConsignPreview()"/>
+      </div>
+    </div>
+    <p id="consign-preview" style="font-size:11px;color:var(--txt3);margin-top:6px"></p>
+  </div>
+  <p class="lbl">Vendor</p>
+  <div class="vwrap">
+    <input id="f-vendor" type="text" placeholder="e.g. CNG, Leu, private seller..." autocomplete="off" oninput="onVnd()"/>
+    <div class="sugg" id="sugg"></div>
+  </div>
+  <div class="g2" style="margin-top:.75rem">
+    <div><p class="lbl" style="margin-top:0">Lot number</p><input id="f-lot" type="text" placeholder="e.g. 583"/></div>
+    <div><p class="lbl" style="margin-top:0">Date acquired</p><input id="f-date" type="date"/></div>
+  </div>
+  <p class="lbl">Cost paid (USD) <span style="font-weight:400;color:var(--txt3)">— leave blank for consignments</span></p>
+  <div class="crow">
+    <input type="number" id="f-cost" placeholder="e.g. 385" oninput="onCost()"/>
+    <div class="cipher" id="cipher-out">—</div>
+  </div>
+
+  <div style="margin-top:.75rem">
+    <p class="lbl" style="margin-top:0">Status</p>
+    <select id="f-status">
+      <option value="PENDING">PENDING — won/paid, in transit to me</option>
+      <option value="NEW">NEW — received, not attributed</option>
+      <option value="BASIC">BASIC — rough ID done</option>
+      <option value="COMPLETE">COMPLETE — fully attributed</option>
+      <option value="TAGGED">TAGGED</option>
+      <option value="LISTED">LISTED</option>
+      <option value="SOLD">SOLD</option>
+    </select>
+  </div>
+
+  <p class="lbl">Tray</p>
+  <input id="f-tray" type="text" placeholder="Tray label, e.g. A-014, INTAKE-A01, or 3" autocomplete="off" oninput="updLoc()"/>
+  <div class="cg-lbl" style="margin-top:8px">Square <span style="font-weight:400;text-transform:none">(tap the square where the coin sits — rows A–D, columns 1–6)</span></div>
+  <div id="tray-grid" class="tray-grid"></div>
+  <div class="loc-row" style="margin-top:8px">
+    <input id="f-location" type="text" readonly placeholder="(location builds here)" style="color:var(--txt2)"/>
+    <button class="sm" onclick="clearSquare()">Clear square</button>
+  </div>
+  <p style="font-size:11px;color:var(--txt3);margin-top:4px">Tip: you can save a coin as <b>NEW</b> with just SKU, cost, source &amp; tray, and attribute it later — the coin is in inventory immediately. The square is optional; tray alone is fine.</p>
+
+  <div class="hr"></div>
+  <div class="sku-box">
+    <div class="sku-lbl">Internal SKU</div>
+    <div class="sku-val"><span class="seg" id="s0">AH</span><span class="seg">-</span><span class="seg" id="s1">???</span><span class="seg">-</span><span class="seg" id="s2">???</span><span class="seg">-</span><span class="seg" id="s3">0001</span></div>
+    <div class="pub">Public SKU: <span id="pub-sku">—</span></div>
+  </div>
+
+  <div class="brow" style="margin-top:1rem">
+    <button class="btn sec" id="q-btn" onclick="addToQueue()">+ Queue</button>
+    <button class="btn pri" id="s-btn" onclick="addToQueue(true)">+ Submit now</button>
+  </div>
+  <div class="status" id="intake-st"></div>
+
+  <div id="queue-wrap" style="display:none;margin-top:1.5rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <p class="lbl" style="margin:0">Queue (<span id="q-count">0</span>)</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="sm" onclick="exportWN()">▲ Whatnot CSV</button>
+        <button class="sm pri" id="submit-all-btn" onclick="submitAll()">Submit all</button>
+      </div>
+    </div>
+    <div id="queue-list" style="margin-top:.75rem"></div>
+    <div class="status" id="queue-st"></div>
+  </div>
+</div>
+
+<!-- SALE -->
+<div class="panel" id="panel-sale">
+  <p class="lbl t">Build invoice — add coins</p>
+  <div style="position:relative">
+    <input id="sale-search" type="text" placeholder="Search SKU, name, description..." oninput="onSaleSearch()"/>
+    <button onclick="clearSaleSearch()" id="sale-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;color:var(--txt3);cursor:pointer">×</button>
+  </div>
+  <div id="sale-results"></div>
+
+  <div id="cart-wrap" style="display:none;margin-top:.75rem">
+    <div class="hr"></div>
+    <p class="lbl">Invoice items</p>
+    <div id="cart-items"></div>
+
+    <p class="lbl">Shipping charge (optional)</p>
+    <input type="number" id="inv-shipping" placeholder="0.00" oninput="renderCart()"/>
+
+    <p class="lbl">Payment plan</p>
+    <select id="inv-plan" onchange="renderCart()">
+      <option value="0">None — paid in full</option>
+      <option value="15">15-day — no down, no interest</option>
+      <option value="30">30-day — 10% down, 1% interest</option>
+      <option value="60">60-day — 15% down, 2.5% interest</option>
+      <option value="90">90-day — 20% down, 5% interest</option>
+      <option value="120">120-day — 25% down, 10% interest</option>
+    </select>
+
+    <div id="inv-totals" style="background:var(--bg2);border-radius:var(--r);padding:.75rem;margin-top:.6rem;font-size:13px;line-height:1.7"></div>
+
+    <p class="lbl">Buyer name</p><input id="buyer-name" type="text"/>
+    <p class="lbl">Buyer address (for shipping)</p><textarea id="buyer-addr" rows="2"></textarea>
+    <p class="lbl">Buyer email or phone (to send invoice)</p><input id="buyer-contact" type="text" placeholder="email or mobile number"/>
+
+    <p class="lbl">Venue</p>
+    <div class="venue-grid">
+      <button class="vb" data-v="Coin Show" onclick="selVenue(this)">Coin Show</button>
+      <button class="vb" data-v="Whatnot" onclick="selVenue(this)">Whatnot</button>
+      <button class="vb" data-v="Facebook" onclick="selVenue(this)">Facebook</button>
+      <button class="vb" data-v="Private Message" onclick="selVenue(this)">Private</button>
+      <button class="vb" data-v="eBay" onclick="selVenue(this)">eBay</button>
+      <button class="vb" data-v="VCoins" onclick="selVenue(this)">VCoins</button>
+    </div>
+    <div class="xf" id="wn-extra">
+      <p class="lbl">Whatnot show name</p><input id="wn-show" type="text" placeholder="e.g. Roman Rarities Live #42"/>
+      <p class="lbl">Whatnot lot number</p><input id="wn-lot" type="text" placeholder="e.g. 14"/>
+    </div>
+    <p class="lbl">Sale date</p><input id="sale-date" type="date"/>
+
+    <div class="hr"></div>
+    <div class="brow" style="flex-wrap:wrap">
+      <button class="btn sec" onclick="invoicePDF('download')">⬇ Download PDF</button>
+      <button class="btn sec" onclick="invoicePDF('send')">✉ Send to buyer</button>
+    </div>
+    <button class="btn pri" id="sale-btn" onclick="completeSale()" style="margin-top:.5rem">✓ Complete sale &amp; log</button>
+    <div id="plan-cal" style="display:none;margin-top:.5rem"></div>
+    <div class="status" id="sale-st"></div>
+  </div>
+</div>
+
+<!-- PRINT TAGS -->
+<div class="panel" id="panel-print">
+  <p class="lbl t">Select coins to print</p>
+  <div class="brow">
+    <button class="btn sec" onclick="printFromQueue()">From queue</button>
+    <button class="btn sec" onclick="printSearchShow()">Search sheet</button>
+  </div>
+  <div id="print-search-wrap" style="display:none;margin-top:.75rem">
+    <input type="text" id="print-search" placeholder="Search by name, SKU..." oninput="onPrintSearch()"/>
+    <div id="print-search-res"></div>
+  </div>
+  <div id="print-selected" style="margin-top:.75rem"></div>
+  <div id="print-actions" style="display:none">
+    <div class="hr"></div>
+    <p class="lbl">Tag size</p>
+    <div class="brow" style="flex-wrap:wrap">
+      <button class="btn sec" onclick="tagPreset('s')">Small (2×2 in)</button>
+      <button class="btn sec" onclick="tagPreset('m')">Medium (1.75×1.75)</button>
+      <button class="btn sec" onclick="tagPreset('l')">Large (2.5×2.5)</button>
+    </div>
+    <div class="g2" style="margin-top:.5rem">
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Tag width (in)</label>
+        <input type="number" id="ts-w" step="0.05" min="0.75" oninput="onTagSize()"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Tag height (in)</label>
+        <input type="number" id="ts-h" step="0.05" min="0.75" oninput="onTagSize()"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Text size (pt)</label>
+        <input type="number" id="ts-f" step="0.5" min="3" oninput="onTagSize()"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--txt2)">Tags across (info+logo each)</label>
+        <input type="number" id="ts-cols" step="1" min="1" max="4" oninput="onTagSize()"/>
+      </div>
+    </div>
+    <p id="ts-note" style="font-size:11px;color:var(--txt3);margin-top:4px"></p>
+    <div class="hr"></div>
+    <div id="tag-preview"></div>
+    <button class="btn pri no-print" onclick="doPrint()">⎙ Print tags</button>
+    <button class="btn sec no-print" onclick="genCOA()" style="margin-top:.5rem">📜 Certificates of Authenticity (PDF, 4 per page)</button>
+    <div class="status no-print" id="coa-st"></div>
+  </div>
+</div>
+
+<!-- WHATNOT -->
+<div class="panel" id="panel-whatnot">
+  <p class="lbl t">Whatnot CSV export</p>
+  <p style="font-size:13px;color:var(--txt2);margin-bottom:.75rem">Select coins for your batch upload CSV. Price = retail × 1.10.</p>
+  <div class="brow">
+    <button class="btn sec" onclick="wnFromQueue()">From queue</button>
+    <button class="btn sec" onclick="wnSearchShow()">Search sheet</button>
+  </div>
+  <div id="wn-search-wrap" style="display:none;margin-top:.75rem">
+    <input type="text" id="wn-search" placeholder="Search..." oninput="onWnSearch()"/>
+    <div id="wn-search-res"></div>
+  </div>
+  <div id="wn-list" style="margin-top:.75rem"></div>
+  <div id="wn-actions" style="display:none">
+    <div class="hr"></div>
+    <button class="btn pri" onclick="dlWN()">⬇ Download Whatnot CSV</button>
+  </div>
+</div>
+
+<!-- LOCATE -->
+<div class="panel" id="panel-locate">
+  <p class="lbl t">Locate / pull a coin</p>
+  <div id="status-summary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem"></div>
+  <input type="text" id="loc-search" placeholder="SKU, name, country, or tray..." oninput="onLocSearch()"/>
+  <p style="font-size:12px;color:var(--txt3);margin-top:6px">Search by tray (e.g. <b>A-014</b>) to see everything in that tray, or by SKU/name to find one coin and where it lives.</p>
+  <div id="loc-results" style="margin-top:.5rem"></div>
+  <div class="hr"></div>
+  <button class="btn sec" onclick="loadConsignors()">💰 Consignor payouts owed</button>
+  <div id="consignor-summary" style="margin-top:.5rem"></div>
+  <button class="btn sec" onclick="loadInbound()" style="margin-top:.6rem">📦 Inbound / pending shipments</button>
+  <div id="inbound-summary" style="margin-top:.5rem"></div>
+  <button class="btn sec" onclick="loadPlans()" style="margin-top:.6rem">📅 Active payment plans</button>
+  <div id="plans-summary" style="margin-top:.5rem"></div>
+</div>
+
+<!-- EXPENSES -->
+<div class="panel" id="panel-expense">
+  <p class="lbl t">Log an expense</p>
+  <label class="btn sec" style="display:block;text-align:center;cursor:pointer">📷 Scan a receipt (auto-fill)<input type="file" id="exp-scan" accept="image/*" capture="environment" style="display:none" onchange="scanReceipt(this)"/></label>
+  <div class="status" id="exp-scan-st"></div>
+  <p class="lbl">Amount (USD)</p>
+  <input type="number" id="exp-amount" placeholder="e.g. 150"/>
+  <p class="lbl">Category</p>
+  <select id="exp-category" onchange="onExpCat()">
+    <option value="Show">Show (table/bourse fee)</option>
+    <option value="Whatnot/Promo">Whatnot / Promo / Giveaways</option>
+    <option value="Outbound Shipping">Outbound shipping (postage/insurance)</option>
+    <option value="Supplies">Supplies (flips, capsules, printer)</option>
+    <option value="Fees">Fees (Whatnot/PayPal/eBay)</option>
+    <option value="Tools/Subscriptions">Tools / Subscriptions</option>
+    <option value="Mileage">Mileage</option>
+    <option value="Professional">Professional (grading, books, dues)</option>
+    <option value="Travel">Tolls / Flights / Travel</option>
+    <option value="Other">Other</option>
+  </select>
+  <div id="exp-event-wrap" style="display:none">
+    <p class="lbl">Show / event name</p>
+    <input type="text" id="exp-event" placeholder="e.g. Baltimore Whitman March 2026"/>
+  </div>
+  <div id="exp-miles-wrap" style="display:none">
+    <p class="lbl">Miles driven</p>
+    <input type="number" id="exp-miles" placeholder="e.g. 120"/>
+  </div>
+  <p class="lbl">Date</p>
+  <input type="date" id="exp-date"/>
+  <p class="lbl">Note / vendor (optional)</p>
+  <input type="text" id="exp-note" placeholder="e.g. USPS, Staples, table fee"/>
+  <p class="lbl">Receipt photo (optional)</p>
+  <input type="file" id="exp-receipt" accept="image/*" capture="environment"/>
+  <div id="exp-receipt-prev" style="margin-top:6px"></div>
+  <button class="btn pri" id="exp-btn" onclick="logExpense()" style="margin-top:.75rem">✓ Save expense</button>
+  <div class="status" id="exp-st"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="panel" id="panel-dash">
+  <p class="lbl t">Financial dashboard</p>
+  <div class="brow"><button class="btn sec" onclick="loadDashboard()">↻ Refresh</button></div>
+  <div id="dash-body" style="margin-top:.5rem"><p style="font-size:13px;color:var(--txt3)">Loading...</p></div>
+  <div class="hr"></div>
+  <p class="lbl">Bookkeeper export (QuickBooks-ready)</p>
+  <p style="font-size:12px;color:var(--txt3);margin-bottom:6px">Builds two tabs in your sheet — <b>QB Transactions</b> and <b>QB Summary</b> — for the date range. Your bookkeeper opens the sheet and exports those tabs to CSV.</p>
+  <div class="g2">
+    <div><p class="lbl" style="margin-top:0">From</p><input type="date" id="bk-start"/></div>
+    <div><p class="lbl" style="margin-top:0">To</p><input type="date" id="bk-end"/></div>
+  </div>
+  <button class="btn sec" onclick="buildBookkeeper()" style="margin-top:.6rem">📒 Build bookkeeper tabs</button>
+  <div class="status" id="bk-st"></div>
+  <div class="hr"></div>
+  <p class="lbl">Show catalog (offline PDF)</p>
+  <p style="font-size:12px;color:var(--txt3);margin-bottom:6px">A searchable PDF of your inventory with photos and full details — save it to your phone before a show so it works with no internet. Generate it at home on good wifi.</p>
+  <p class="lbl" style="margin-top:0">Include statuses</p>
+  <select id="cat-filter">
+    <option value="SELLABLE">For sale (NEW, BASIC, COMPLETE, TAGGED, LISTED)</option>
+    <option value="ALL">Everything on hand (excl. SOLD/VOID)</option>
+    <option value="COMPLETE">COMPLETE only</option>
+    <option value="TAGGED">TAGGED only</option>
+    <option value="LISTED">LISTED only</option>
+    <option value="NEW">NEW only</option>
+  </select>
+  <p class="lbl">Order by</p>
+  <select id="cat-sort">
+    <option value="region">Culture / region, then ruler</option>
+    <option value="price-hi">Price — high to low</option>
+    <option value="price-lo">Price — low to high</option>
+    <option value="metal">Metal (AV, AR, Æ)</option>
+    <option value="ruler">Ruler / name (A–Z)</option>
+    <option value="sku">SKU</option>
+  </select>
+  <button class="btn sec" onclick="buildCatalog()" style="margin-top:.6rem">📖 Generate show catalog</button>
+  <div class="status" id="cat-st"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="panel" id="panel-settings">
+  <p class="lbl t">Anthropic API key</p>
+  <div class="settings-row">
+    <label>Current key</label>
+    <input type="text" id="key-display" readonly style="color:var(--txt3)"/>
+    <label style="margin-top:.5rem">New key (paste full sk-ant-... key)</label>
+    <input type="text" id="key-input" placeholder="sk-ant-..."/>
+    <button class="btn sec" style="margin-top:.5rem" onclick="saveKey()">Save API key</button>
+  </div>
+
+  <p class="lbl">Google Sheets connection</p>
+  <div class="settings-row">
+    <label>Status</label>
+    <div id="conn-status" style="font-size:13px;color:var(--txt2)">Checking...</div>
+    <label style="margin-top:.5rem">Apps Script web app URL</label>
+    <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/.../exec"/>
+    <label style="margin-top:.5rem">Shared secret (must match the script)</label>
+    <input type="text" id="secret-input" placeholder="your-secret-password"/>
+    <button class="btn sec" style="margin-top:.5rem" onclick="saveConn()">Save connection</button>
+    <p style="font-size:11px;color:var(--txt3);margin-top:.5rem">Setup (once): open your Sheet → Extensions → Apps Script → paste the provided code → set SECRET → Deploy → New deployment → Web app → Execute as <b>Me</b>, Access <b>Anyone</b> → copy the /exec URL here. This never expires.</p>
+  </div>
+
+  <p class="lbl">Tag logo</p>
+  <div class="settings-row">
+    <div id="logo-status" style="font-size:13px;color:var(--txt2)">No logo set</div>
+    <div id="logo-prev" style="margin:6px 0"></div>
+    <label>Upload a logo image (PNG/JPG) — appears on printed tags</label>
+    <input type="file" id="logo-file" accept="image/*" onchange="onLogoFile(this)"/>
+    <button class="btn sec" style="margin-top:.5rem" onclick="clearLogo()">Remove logo</button>
+  </div>
+
+
+  <p class="lbl">Business info (for invoices)</p>
+  <div class="settings-row">
+    <label>Business name</label>
+    <input type="text" id="biz-name" placeholder="Handheld History Collectables" oninput="saveBiz()"/>
+    <label style="margin-top:.5rem">Address (appears on invoice)</label>
+    <textarea id="biz-addr" rows="2" placeholder="PO Box 101&#10;Jenkintown, PA 19046" oninput="saveBiz()"></textarea>
+    <label style="margin-top:.5rem">Contact line (email / phone, optional)</label>
+    <input type="text" id="biz-contact" placeholder="hello@handheldhistory.com" oninput="saveBiz()"/>
+  </div>
+
+  <p class="lbl">Payment handles (for invoices)</p>
+  <div class="settings-row">
+    <label>PayPal email</label>
+    <input type="text" id="pay-paypal" placeholder="you@email.com" oninput="saveBiz()"/>
+    <label style="margin-top:.5rem">Venmo @handle</label>
+    <input type="text" id="pay-venmo" placeholder="@HandheldHistory" oninput="saveBiz()"/>
+    <label style="margin-top:.5rem">CashApp $cashtag</label>
+    <input type="text" id="pay-cashapp" placeholder="$HandheldHistory" oninput="saveBiz()"/>
+    <label style="margin-top:.5rem">Zelle (email or phone)</label>
+    <input type="text" id="pay-zelle" placeholder="you@email.com" oninput="saveBiz()"/>
+    <p style="font-size:11px;color:var(--txt3);margin-top:.5rem">Cash and check are always offered. PayPal/Venmo show both F&amp;F and G&amp;S options on the invoice.</p>
+  </div>
+
+  <div class="hr"></div>
+  <button class="btn err" onclick="nukeAll()">Clear all saved data</button>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="modal-alloc">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="modal-title">Total amount paid (USD)</div><div class="modal-sub" id="alloc-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-alloc')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--txt2)">Enter your total all-in USD cost (hammer + buyer fee + shipping + conversion). It's split across the coins below.</p>
+      <input type="number" id="alloc-total" placeholder="e.g. 4971.48" style="font-size:18px;font-weight:600;padding:14px;text-align:center" oninput="updateAllocPreview()"/>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn sec" id="alloc-prop" style="margin-top:0;flex:1" onclick="setAllocMode('prop')">By hammer price</button>
+        <button class="btn sec" id="alloc-equal" style="margin-top:0;flex:1" onclick="setAllocMode('equal')">Split equally</button>
+      </div>
+      <p style="font-size:11px;color:var(--txt3);margin-top:6px">Use <b>By hammer price</b> for a multi-lot invoice where each coin has its own hammer. Use <b>Split equally</b> for a group/bulk lot bought as one — the total is divided evenly by the number of coins.</p>
+      <div id="alloc-preview" style="font-size:12px;color:var(--txt3);text-align:center;min-height:16px;margin-top:4px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn sec" onclick="closeModal('modal-alloc')">Cancel</button>
+      <button class="btn pri" onclick="confirmAlloc()">Review coins →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-review">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="modal-title">Review parsed coins</div><div class="modal-sub" id="review-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-review')">×</button>
+    </div>
+    <div class="modal-body" id="review-cards"></div>
+    <div class="modal-foot">
+      <button class="btn sec" onclick="closeModal('modal-review')">Cancel</button>
+      <button class="btn pri" id="approve-btn" onclick="approveAll()">Add all to queue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ────────────────────────────────────
+const API='https://api.anthropic.com/v1/messages';
+const SHEET_ID='1uDgCHEGaUTFxNPJ4X_UkpwIOvXoVwQBHCL5C5E27WFQ'; // reference only — the Apps Script is bound to this sheet directly
+// Logo for printed tags is uploaded in Settings and read via getLogo()
+const CIPHER_MAP={0:'G',1:'O',2:'L',3:'D',4:'S',5:'T',6:'R',7:'I',8:'K',9:'E'};
+const GRADE_WN={MS:'New','Ch AU':'New',AU:'New',aAU:'Like New','Ch XF':'Like New',XF:'Like New',aXF:'Very Good','Ch VF':'Very Good',VF:'Very Good',aVF:'Good','Ch G':'Good',G:'Good',AG:'Acceptable',Poor:'Acceptable'};
+const VENDORS=[{n:'CNG',f:'Classical Numismatic Group'},{n:'LEU',f:'Leu Numismatik'},{n:'NAC',f:'Numismatica Ars Classica'},{n:'ROM',f:'Roma Numismatics'},{n:'KNK',f:'Künker'},{n:'GNM',f:'Gorny & Mosch'},{n:'HRT',f:'Heritage Auctions'},{n:'ART',f:'Artemide Asta'},{n:'BTF',f:'Bertolami Fine Arts'},{n:'EID',f:'Eid Mar'},{n:'MDC',f:'MDC Monaco'},{n:'NMD',f:'Numismad'},{n:'EBY',f:'eBay'},{n:'WNT',f:'Whatnot'}];
+const COND={
+  'p-surface':['Lustrous','Smoothed','Smooth','Rough','Roughness','Porous','Granular','Tooled','Scratched',"Banker's marks",'Countermark','Graffito','Graffiti','Die break','Die breaks','Encrusted','Cleaned','Patinated','Obscured legends'],
+  'p-strike':['Well struck','Exceptional strike','Full beaded border','Weakly struck','Centered','Slightly off-center','Off-center','Double struck','Overstruck','Brockage','Heavy-weight specimen','Light-weight specimen'],
+  'p-toning':['Original toning','Attractive toning','Iridescent','Smooth toning','Mottled','Harsh toning','Artificial toning','Dark toning','Light toning'],
+  'p-appeal':['Sharp','Bold','Choice','Problem-free','Cabinet friction','Worn smooth']
+};
+const SIDE_PREFIXES=['Obverse:','Reverse:','Obverse.','Reverse.','Obv:','Rev:','Obv.','Rev.','D/','R/','O/'];
+
+// ── STATE ────────────────────────────────────────
+let S={src:'AH',vcode:'',vfull:'',seq:1};
+let queue=[];
+let editIdx=-1;
+let reviewCoins=[];
+let reviewSource='';
+let allocCosts=[];
+let allocMode='prop';
+let invMeta=null;
+let photoLinks={obv:'',rev:'',stitch:''};
+let selVenueVal='';
+let selCoin=null;
+let printSel=[];
+let wnSel=[];
+let condState={};
+let activePopup=null;
+let saleSearchT=null;
+let printSearchT=null;
+let wnSearchT=null;
+let traySquare='';
+
+// ── STORAGE ──────────────────────────────────────
+function getKey(){return localStorage.getItem('hh_key')||'';}
+function getScriptUrl(){return localStorage.getItem('hh_url')||'';}
+function getSecret(){return localStorage.getItem('hh_secret')||'';}
+function getLogo(){return localStorage.getItem('hh_logo')||'';}
+
+// Pulls the next SKU number from the sheet so all devices share one counter.
+// Only runs when the local queue is empty, so it never disturbs pending coins.
+async function fetchNextSeq(){
+  if(!getScriptUrl()||queue.length)return;
+  try{const d=await callScript('nextseq',{});if(d&&d.next){S.seq=d.next;saveQ();updSKU();}}catch(e){}
+}
+function saveQ(){try{localStorage.setItem('hh_q',JSON.stringify(queue));localStorage.setItem('hh_seq',S.seq);}catch(e){}}
+function loadQ(){try{const q=localStorage.getItem('hh_q');const s=localStorage.getItem('hh_seq');if(q)queue=JSON.parse(q);if(s)S.seq=parseInt(s)||1;}catch(e){}}
+
+// ── TAB NAV ──────────────────────────────────────
+function go(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('on',['intake','sale','print','whatnot','locate','expense','dash','settings'][i]===t);});
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('on'));
+  const p=document.getElementById('panel-'+t);
+  if(p)p.classList.add('on');
+  if(t==='settings')loadSettings();
+  if(t==='locate')loadStats();
+  if(t==='intake')fetchNextSeq();
+  if(t==='dash')loadDashboard();
+}
+
+// ── API CALLS ────────────────────────────────────
+async function claude(messages,maxTokens,imageBlock){
+  const key=getKey();
+  if(!key)throw new Error('No API key. Go to Settings tab.');
+  const body={model:'claude-sonnet-4-6',max_tokens:maxTokens||1000,messages};
+  const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  const data=await resp.json();
+  if(data.error)throw new Error(data.error.type+': '+data.error.message);
+  return(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+
+// Calls the Apps Script web app. Uses text/plain so the browser skips the
+// CORS preflight (Apps Script can't answer preflights); the secret travels
+// in the body. The script renews nothing — it runs as you, so it never expires.
+async function callScript(action,payload){
+  const url=getScriptUrl();
+  if(!url)throw new Error('No Apps Script URL. Go to Settings tab.');
+  const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,secret:getSecret(),...(payload||{})})});
+  let data;
+  try{data=await resp.json();}catch(e){throw new Error('Bad response from script — check the URL is the /exec link.');}
+  if(data.error)throw new Error(data.error);
+  return data;
+}
+
+async function sheetsAppend(rows){return await callScript('append',{rows});}
+
+async function sheetsUpdate(row,cols,values){return await callScript('update',{row,startCol:cols,values});}
+
+async function sheetsSearch(q){const data=await callScript('search',{query:q});return data.results||[];}
+
+// ── HELPERS ──────────────────────────────────────
+function cipher(n){if(!n||isNaN(n))return'';return String(Math.round(n)).split('').map(d=>CIPHER_MAP[+d]).join('');}
+// Cost cipher for the tag back: round UP to the next whole dollar, then encode.
+function costCipher(n){n=parseFloat(String(n).replace(/[^0-9.]/g,''));if(!n||isNaN(n))return'';return String(Math.ceil(n)).split('').map(d=>CIPHER_MAP[+d]).join('');}
+// Business-card QR — same on every tag, points at the dot.cards page.
+// Using the resolved long-form URL (decoded from the physical card) so the
+// generated code is mathematically crisp and scans even at small print sizes.
+const QR_URL='https://dot.cards/user/gdsodtjbvpqymezjf8k5el8hj/c/bl';
+let _qrCache='';
+function getQR(){
+  if(_qrCache!==''){return _qrCache;}
+  try{
+    if(typeof QRCode==='undefined'){return '';}
+    const holder=document.createElement('div');
+    new QRCode(holder,{text:QR_URL,width:200,height:200,correctLevel:QRCode.CorrectLevel.H});
+    const img=holder.querySelector('img');const cv=holder.querySelector('canvas');
+    if(img&&img.src){_qrCache=img.src;}
+    else if(cv){_qrCache=cv.toDataURL('image/png');}
+    return _qrCache;
+  }catch(e){return '';}
+}
+function r5(n){return Math.round(n*1.75/5)*5;}
+function strip(s){if(!s)return'';let t=s.trim();for(const p of SIDE_PREFIXES){if(t.toLowerCase().startsWith(p.toLowerCase())){t=t.slice(p.length).trim();break;}}return t;}
+function gv(id){return(document.getElementById(id)||{}).value||'';}
+function sv(id,v){const e=document.getElementById(id);if(e)e.value=v||'';}
+function dtCode(){const r=gv('f-date');if(r)return r.replace(/-/g,'').slice(0,6);const n=new Date();return n.getFullYear()+String(n.getMonth()+1).padStart(2,'0');}
+function vcode(){return S.vcode||(S.vfull.slice(0,3).toUpperCase())||'???';}
+function consignInitials(){const n=gv('f-consignor').trim();if(!n)return'';const parts=n.split(/\s+/);const fi=parts[0]?parts[0][0]:'';const li=parts.length>1?parts[parts.length-1][0]:'';return ('C'+fi+li).toUpperCase();}
+function pubSKU(){const sl={AH:'A',DT:'D',DP:'P',BL:'B',CN:'C'}[S.src]||'X';const base=sl+'-'+String(S.seq).padStart(4,'0');const ci=consignInitials();return (S.src==='CN'&&ci)?ci+'-'+base:base;}
+function intSKU(costOverride){const c=(costOverride!==undefined&&costOverride!=='')?costOverride:gv('f-cost');return`${S.src}-${vcode()}-${cipher(c)||'000'}-${String(S.seq).padStart(4,'0')}`;}
+function gradeToWN(g){return GRADE_WN[g]||'Acceptable';}
+function csvEsc(s){if(!s)return'';s=String(s).replace(/"/g,'""');return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s+'"':s;}
+function closeModal(id){document.getElementById(id).classList.remove('on');document.body.style.overflow='';}
+function openModal(id){document.getElementById(id).classList.add('on');document.body.style.overflow='hidden';}
+
+// ── SKU DISPLAY ──────────────────────────────────
+function updSKU(){
+  const ci=cipher(gv('f-cost'))||'???';
+  const segs=[[S.src,'AH'],[vcode(),'???'],[ci,'???'],[String(S.seq).padStart(4,'0'),'0001']];
+  segs.forEach(([v,empty],i)=>{const e=document.getElementById('s'+i);if(!e)return;e.textContent=v;e.className=v===empty?'seg':'seg on';});
+  const p=document.getElementById('pub-sku');if(p)p.textContent=pubSKU();
+}
+
+// ── SOURCE ───────────────────────────────────────
+function selSrc(b){document.querySelectorAll('.src').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.src=b.dataset.code;document.getElementById('consign-fields').style.display=(S.src==='CN')?'block':'none';updSKU();}
+function updConsignPreview(){const pct=parseFloat(gv('f-consign-pct'))||0;const el=document.getElementById('consign-preview');if(!el)return;if(pct>0)el.textContent=`You keep ${pct}% · consignor receives ${(100-pct)}% of each sale.`;else el.textContent='Enter the percentage you keep.';}
+
+// ── TRAY / LOCATION ──────────────────────────────
+function buildTrayGrid(){
+  const g=document.getElementById('tray-grid');if(!g)return;
+  let h='';
+  ['A','B','C','D'].forEach(r=>{for(let c=1;c<=6;c++){const id=r+c;h+=`<div class="tsq" id="tsq-${id}" onclick="selectSquare('${id}')">${id}</div>`;}});
+  g.innerHTML=h;applySquareHighlight();
+}
+function selectSquare(id){traySquare=(traySquare===id)?'':id;applySquareHighlight();updLoc();}
+function applySquareHighlight(){document.querySelectorAll('.tsq').forEach(e=>e.classList.remove('on'));if(traySquare){const el=document.getElementById('tsq-'+traySquare);if(el)el.classList.add('on');}}
+function clearSquare(){traySquare='';applySquareHighlight();updLoc();}
+function updLoc(){const tray=gv('f-tray').trim();sv('f-location',tray&&traySquare?tray+'-'+traySquare:(tray||traySquare));}
+
+// ── GRADE ────────────────────────────────────────
+function selGrade(b){document.querySelectorAll('.gb').forEach(x=>x.classList.remove('on'));b.classList.add('on');assembleCondition();}
+
+// ── CONDITION PILLS ──────────────────────────────
+function buildPills(){
+  Object.entries(COND).forEach(([gid,attrs])=>{
+    const container=document.getElementById(gid);if(!container)return;
+    attrs.forEach(attr=>{
+      condState[attr]='none';
+      const pill=document.createElement('div');pill.className='pill';pill.id='pill-'+attr.replace(/[^a-z]/gi,'_');
+      pill.innerHTML=attr+'<span class="stag" id="stag-'+attr.replace(/[^a-z]/gi,'_')+'"></span>';
+      let pt;
+      const sp=()=>{pt=setTimeout(()=>showPop(attr,pill),500);};
+      const ep=()=>clearTimeout(pt);
+      pill.addEventListener('mousedown',sp);pill.addEventListener('mouseup',ep);
+      pill.addEventListener('touchstart',sp,{passive:true});pill.addEventListener('touchend',ep);
+      pill.addEventListener('click',()=>{condState[attr]=condState[attr]==='none'?'both':'none';updPill(attr);assembleCondition();});
+      const pop=document.createElement('div');pop.className='pop';pop.id='pop-'+attr.replace(/[^a-z]/gi,'_');
+      ['Obv','Rev','Both','✕'].forEach(opt=>{const o=document.createElement('div');o.className='po';o.textContent=opt;o.addEventListener('click',e=>{e.stopPropagation();condState[attr]=opt==='✕'?'none':opt==='Obv'?'obv':opt==='Rev'?'rev':'both';pop.classList.remove('on');activePopup=null;updPill(attr);assembleCondition();});pop.appendChild(o);});
+      pill.appendChild(pop);container.appendChild(pill);
+    });
+  });
+  document.addEventListener('click',()=>{if(activePopup){activePopup.classList.remove('on');activePopup=null;}});
+}
+function showPop(attr,pill){const pop=document.getElementById('pop-'+attr.replace(/[^a-z]/gi,'_'));if(activePopup&&activePopup!==pop)activePopup.classList.remove('on');pop.classList.add('on');activePopup=pop;}
+function updPill(attr){const id=attr.replace(/[^a-z]/gi,'_');const pill=document.getElementById('pill-'+id);const stag=document.getElementById('stag-'+id);const s=condState[attr];pill.className='pill'+(s==='none'?'':(s==='obv'?' obv':s==='rev'?' rev':' on'));stag.textContent=s==='obv'?' Obv':s==='rev'?' Rev':'';}
+function assembleCondition(){
+  const g=document.querySelector('.gb.on');let parts=[];
+  if(g)parts.push(g.dataset.g+'.');
+  const sl=[],wh=[];
+  Object.entries(condState).forEach(([a,s])=>{if(s==='none')return;if(s==='obv')sl.push(a+' (obv)');else if(s==='rev')sl.push(a+' (rev)');else wh.push(a);});
+  if(wh.length)parts.push(wh.join(', ')+'.');
+  if(sl.length)parts.push(sl.join(', ')+'.');
+  const other=gv('f-cond-other').trim();
+  if(other)parts.push(other.replace(/\s*,\s*/g,', ').replace(/\.*$/,'')+'.');
+  sv('f-cond',parts.join(' '));
+}
+
+// ── VENDOR ───────────────────────────────────────
+function onVnd(){
+  const v=gv('f-vendor').toUpperCase();S.vfull=v;S.vcode='';
+  const box=document.getElementById('sugg');if(!box)return;
+  if(!v){box.style.display='none';updSKU();return;}
+  const m=VENDORS.filter(x=>x.n.startsWith(v)||x.f.toUpperCase().includes(v));
+  if(!m.length){box.style.display='none';updSKU();return;}
+  box.innerHTML=m.slice(0,5).map(x=>`<div class="si" onclick="pickV('${x.n}','${x.f.replace(/'/g,"\'")}'">${x.f}<span class="sc">${x.n}</span></div>`).join('');
+  box.style.display='block';updSKU();
+}
+function pickV(code,full){S.vcode=code;S.vfull=full;sv('f-vendor',full);document.getElementById('sugg').style.display='none';updSKU();}
+document.addEventListener('click',e=>{if(!e.target.closest('.vwrap')){const b=document.getElementById('sugg');if(b)b.style.display='none';}});
+
+// ── COST ─────────────────────────────────────────
+function onCost(){
+  const v=gv('f-cost');const c=cipher(v);const el=document.getElementById('cipher-out');
+  el.textContent=c||'—';el.className=c?'cipher on':'cipher';
+  const pe=document.getElementById('f-price');
+  if(pe&&!pe.dataset.manual&&v&&!isNaN(v))pe.value=r5(parseFloat(v));
+  updSKU();
+}
+
+// ── INVOICE IMAGE ────────────────────────────────
+let invB64='',invType='';
+function onInvFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    invB64=e.target.result.split(',')[1];invType=file.type;
+    document.getElementById('upload-ph').style.display='none';
+    const prev=document.getElementById('upload-prev');prev.style.display='block';
+    document.getElementById('upload-img').src=e.target.result;
+    document.getElementById('extract-btn').style.display='flex';
+  };
+  reader.readAsDataURL(file);
+}
+function clearUpload(e){e.stopPropagation();invB64='';invType='';document.getElementById('upload-ph').style.display='block';document.getElementById('upload-prev').style.display='none';document.getElementById('extract-btn').style.display='none';document.getElementById('inv-file').value='';}
+
+async function doExtract(){
+  const st=document.getElementById('intake-st');
+  if(!invB64){st.textContent='No image loaded.';return;}
+  if(!getKey()){st.textContent='No API key — go to Settings tab first.';return;}
+  const btn=document.getElementById('extract-btn');
+  btn.className='btn sec dim';btn.textContent='⏳ Extracting...';st.textContent='Reading invoice...';
+  try{
+    const mime=(invType&&invType.startsWith('image/')&&!invType.includes('heic')&&!invType.includes('heif'))?invType:'image/jpeg';
+    const body={model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mime,data:invB64}},
+      {type:'text',text:`You are a numismatic expert. Extract every coin from this image. Return ONLY a JSON array, no markdown.
+
+First element must be invoice_meta: {"invoice_meta":true,"subtotal":"sum of hammers","total_due":"final all-in total the buyer pays","vendor":"auction house name","auction_name":"specific sale name","invoice_no":"invoice/Rechnung number if shown"}
+
+Then one object per coin with these fields (use "" if not found):
+lot (lot/Los number), country, name, reign, year, adbc, metal, denomination, mmgm, mint (city only, not blank if mentioned), officina, obverse (description only — NO D/ R/ Obv: Rev: prefixes), reverse (description only — NO prefixes), refs, observations, provenance (Ex... format, search carefully throughout description), story, price (hammer price number only), hammer (same as price)
+
+IMPORTANT: descriptions in auction invoices are often truncated with "…" — capture whatever text is present; do not invent the missing part.
+
+Formatting rules:
+- name: person/issuer name ONLY — no role titles like "Moneyer", "Magistrate", "Consul", "Triumvir".
+- denomination: capitalize the first letter (e.g. "Denarius", "Tetradrachm").
+- metal: use standard numismatic abbreviations — AV for gold, AR for silver, Æ for ALL copper-alloys (bronze, brass, copper, orichalcum, billon), EL for electrum.
+- mmgm: format as "26mm, 36.24g" — NO space between a number and its unit.
+- year + adbc: NEVER include "ca.", "circa", "c.", "approx" — drop them. Bare year/range in "year", era ("BC"/"AD") in "adbc".
+- refs: if specimen counts are stated (e.g. RPC reporting recorded vs. core-collection counts), append in parentheses, e.g. "RPC V 2341 (2 reported, 1 in core)". Only if actually stated.
+- provenance: ALWAYS capture any pedigree / prior-collection / "Ex ..." text if it appears anywhere in the listing — never drop it.
+- story: IF the listing contains narrative or historical prose about the coin or its subject (beyond the bare attribution), condense it into a 45–60 word story for a dealer tag, ending on a complete sentence. Plain, factual language — no hype. Else "".
+
+Example:
+[{"invoice_meta":true,"subtotal":"3430","total_due":"4268.87","vendor":"Artemide Asta","auction_name":"Artemide LXV","invoice_no":"E8/2026/2448"},
+{"lot":"60","country":"Greek Italy, Bruttium","name":"Kaulonia","reign":"","year":"475-425","adbc":"BC","metal":"AR","denomination":"Stater","mmgm":"19.5mm, 7.78g","mint":"Kaulonia","officina":"","obverse":"Apollo striding right holding branch; small daimon on his arm; stag to right","reverse":"Stag standing right","refs":"HN Italy 2044; HGC 1 1419","observations":"Attractive, well centered. Good VF.","provenance":"Ex H.D. Rauch 117, 2023, lot 388","price":"380","hammer":"380"}]`}
+    ]}]};
+    const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.type+': '+data.error.message);
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(raw);
+    invMeta=parsed[0]&&parsed[0].invoice_meta?parsed[0]:null;
+    reviewCoins=invMeta?parsed.slice(1):parsed;
+    reviewCoins=reviewCoins.map(c=>({...c,obverse:strip(c.obverse||''),reverse:strip(c.reverse||'')}));
+    reviewSource='invoice';
+    if(!reviewCoins.length)throw new Error('No coins found in image');
+    // Auto-fill vendor from invoice
+    if(invMeta&&invMeta.vendor&&!gv('f-vendor')){
+      const nm=invMeta.auction_name||invMeta.vendor;sv('f-vendor',nm);S.vfull=nm;
+      const matched=VENDORS.find(v=>invMeta.vendor.toLowerCase().includes(v.f.split(' ')[0].toLowerCase()));
+      if(matched)S.vcode=matched.n;updSKU();
+    }
+    st.textContent=`Found ${reviewCoins.length} coin(s).`;
+    btn.className='btn sec';btn.textContent='🔍 Extract coins from image';
+    openAlloc();
+  }catch(err){
+    btn.className='btn sec';btn.textContent='🔍 Extract coins from image';
+    st.textContent='Error: '+err.message;
+  }
+}
+
+// ── ALLOCATION ───────────────────────────────────
+function openAlloc(){
+  document.getElementById('alloc-sub').textContent=reviewCoins.length+' coin'+(reviewCoins.length!==1?'s':'')+' found';
+  const totalEl=document.getElementById('alloc-total');
+  if(invMeta&&invMeta.total_due)totalEl.value=parseFloat(String(invMeta.total_due).replace(/[^0-9.]/g,'')).toFixed(2);
+  else totalEl.value='';
+  // Default to equal split when there are no usable per-coin hammer prices (i.e. a group/bulk lot)
+  const hh=reviewCoins.map(c=>parseFloat(String(c.hammer||c.price||'0').replace(/[^0-9.]/g,''))||0);
+  allocMode=(hh.reduce((a,b)=>a+b,0)>0 && S.src!=='BL')?'prop':'equal';
+  setAllocMode(allocMode);
+  openModal('modal-alloc');
+}
+function setAllocMode(m){
+  allocMode=m;
+  const p=document.getElementById('alloc-prop'),e=document.getElementById('alloc-equal');
+  if(p)p.className='btn '+(m==='prop'?'pri':'sec');if(p)p.style.marginTop='0';
+  if(e)e.className='btn '+(m==='equal'?'pri':'sec');if(e)e.style.marginTop='0';
+  updateAllocPreview();
+}
+function updateAllocPreview(){
+  const total=parseFloat(gv('alloc-total'))||0;
+  const prev=document.getElementById('alloc-preview');if(!prev)return;
+  if(!total){prev.textContent='';return;}
+  const n=reviewCoins.length;
+  if(allocMode==='equal'){
+    const each=total/n;allocCosts=reviewCoins.map(()=>each);
+    prev.textContent='Equal split: $'+each.toFixed(2)+' each × '+n+' coins';
+    return;
+  }
+  const hammers=reviewCoins.map(c=>parseFloat(String(c.hammer||c.price||'0').replace(/[^0-9.]/g,''))||0);
+  const sub=hammers.reduce((a,b)=>a+b,0);
+  if(sub>0){allocCosts=hammers.map(h=>(h/sub)*total);prev.textContent=reviewCoins.map((c,i)=>(c.name||'Coin')+': $'+allocCosts[i].toFixed(0)).join(' · ');}
+  else{const each=total/n;allocCosts=reviewCoins.map(()=>each);prev.textContent='No hammer prices found — equal split: $'+each.toFixed(2)+' each';}
+}
+function confirmAlloc(){
+  const total=parseFloat(gv('alloc-total'))||0;
+  if(!total){document.getElementById('alloc-preview').textContent='Please enter the total USD amount.';return;}
+  reviewCoins.forEach((c,i)=>{if(c&&allocCosts[i]!=null){c._cost=allocCosts[i].toFixed(2);c._retail=String(r5(allocCosts[i]));}});
+  closeModal('modal-alloc');
+  openReview();
+}
+
+// ── REVIEW ───────────────────────────────────────
+function openReview(){
+  const sub=document.getElementById('review-sub');
+  sub.textContent=reviewCoins.length+' coin'+(reviewCoins.length!==1?'s':'')+' — edit or remove before adding to queue';
+  document.getElementById('approve-btn').textContent='Add all '+reviewCoins.length+' to queue';
+  const cards=document.getElementById('review-cards');
+  cards.innerHTML=reviewCoins.map((c,i)=>buildRCard(c,i)).join('');
+  openModal('modal-review');
+}
+function buildRCard(c,i){
+  const rf=(key,label,val)=>`<div class="rfi"><label>${label}</label><input type="text" value="${(val||'').replace(/"/g,'&quot;')}" onchange="reviewCoins[${i}]['${key}']=this.value"/></div>`;
+  const rt=(key,label,val)=>`<div class="rfi"><label>${label}</label><textarea onchange="reviewCoins[${i}]['${key}']=this.value">${val||''}</textarea></div>`;
+  return`<div class="rcard" id="rc-${i}">
+    <div class="rcard-head"><div class="rcard-name">${c.name||'Unknown'}${c.reign?' ('+c.reign+')':''}</div><button class="rcard-del" onclick="removeRC(${i})">×</button></div>
+    <div class="g2">${rf('country','Culture',c.country)}${rf('name','Issuer',c.name)}${rf('reign','Reign',c.reign)}${rf('year','Mint year',c.year)}${rf('adbc','AD/BC',c.adbc)}${rf('metal','Metal',c.metal)}${rf('denomination','Denomination',c.denomination)}${rf('mmgm','Size/weight',c.mmgm)}${rf('mint','Mint city',c.mint)}${rf('refs','References',c.refs)}${rf('_cost','Cost paid $',c._cost)}${rf('_retail','Retail price $',c._retail)}</div>
+    ${rt('obverse','Obverse',c.obverse)}${rt('reverse','Reverse',c.reverse)}${rt('observations','Observations',c.observations)}${rt('provenance','Provenance (Ex...)',c.provenance)}${rt('story','Story',c.story)}
+  </div>`;
+}
+function removeRC(i){reviewCoins[i]=null;const card=document.getElementById('rc-'+i);if(card)card.style.display='none';const rem=reviewCoins.filter(Boolean).length;document.getElementById('review-sub').textContent=rem+' coins — edit or remove';document.getElementById('approve-btn').textContent='Add '+rem+' to queue';}
+function approveAll(){
+  const approved=reviewCoins.filter(Boolean);
+  if(!approved.length){closeModal('modal-review');return;}
+  const vendor=gv('f-vendor')||'Unknown';
+  const invNo=(invMeta&&invMeta.invoice_no)?invMeta.invoice_no:'';
+  const fromText=(reviewSource==='text');
+  const status=fromText?(gv('f-status')||'NEW'):'PENDING';
+  approved.forEach(c=>{
+    // Invoice batches stamp the source invoice into provenance; plain text pastes don't.
+    const prov=fromText?(c.provenance||''):[c.provenance||'', invNo?('Acquired: '+vendor+' invoice '+invNo):''].filter(Boolean).join(' — ');
+    queue.push({internalSKU:intSKU(c._cost),publicSKU:pubSKU(),seq:S.seq,country:c.country||'',name:c.name||'',reign:c.reign||'',year:c.year||'',adbc:c.adbc||'',metal:normMetal(c.metal||''),denom:c.denomination||'',mmgm:c.mmgm||'',mint:c.mint||'',officina:c.officina||'',obverse:c.obverse||'',reverse:c.reverse||'',refs:c.refs||'',condition:c.observations||'',provenance:prov,story:c.story||'',storyLong:c.storyLong||'',price:c._retail||'',cost:c._cost||'',vendor,lot:c.lot||gv('f-lot'),date:gv('f-date'),location:gv('f-location'),status,src:S.src,grade:'',photoObv:'',photoRev:'',photoStitch:''});
+    S.seq++;updSKU();
+  });
+  saveQ();renderQueue();closeModal('modal-review');
+  reviewSource='';
+  document.getElementById('intake-st').textContent=approved.length+' coin'+(approved.length!==1?'s':'')+(invNo&&!fromText?' from invoice '+invNo:'')+' queued'+(status==='PENDING'?' as PENDING (in transit).':' as '+status+'.');
+}
+
+// ── TEXT PARSE ───────────────────────────────────
+async function doParseText(){
+  const text=gv('attr-text').trim();if(!text)return;
+  const btn=document.getElementById('parse-btn');btn.className='btn sec dim';btn.textContent='Parsing...';
+  try{
+    const raw=await claude([{role:'user',content:`You are a numismatic expert. The text below may describe ONE coin or SEVERAL coins. Parse it and return ONLY a JSON ARRAY (no markdown) with one object per coin. If there is only one coin, return an array with a single object. Use "" for missing fields.
+
+Each object has these fields: country, name, reign, year, adbc, metal, denomination, mmgm, mint (city only), officina, obverse (description only, NO D/ R/ Obv: Rev: prefixes), reverse (description only, NO prefixes), refs, observations, provenance, story
+
+Segment coins carefully: a new coin usually begins with a new culture/ruler heading, a lot number, or a clear paragraph break. Do NOT split a single coin's long obverse/reverse/provenance into multiple coins.
+
+Formatting rules (apply to every coin):
+- name: the person/issuer name ONLY. Do NOT include role titles like "Moneyer", "Magistrate", "Consul", "Triumvir", etc.
+- denomination: Capitalize the first letter (e.g. "Denarius", "Antoninianus", "Tetradrachm").
+- metal: use standard numismatic abbreviations — AV for gold, AR for silver, Æ for ALL copper-alloys (bronze, brass, copper, orichalcum, billon), EL for electrum.
+- mmgm: format as "26mm, 36.24g" with NO space between the number and its unit. Include whichever of diameter/weight are given.
+- year + adbc: NEVER include "ca.", "circa", "c.", "approx" or similar — drop them entirely. Put the bare year/range in "year" and the era in "adbc". Use "BC" or "AD".
+- refs: if the text gives specimen counts (e.g. RPC reporting recorded vs. core-collection counts), append them in parentheses, e.g. "RPC V 2341 (2 reported, 1 in core)". Only include counts actually stated.
+- provenance: ALWAYS capture any "Ex ..." pedigree or prior-collection info if it appears anywhere — never drop it.
+- story: IF the text contains narrative/historical prose for that coin (beyond the bare attribution), condense it into a 45–60 word story for a dealer tag, ending on a COMPLETE sentence. Plain, factual language — no hype. Else "".
+
+Text:
+${text}`}],3000);
+    let arr=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if(!Array.isArray(arr))arr=[arr];
+    arr=arr.map(c=>({...c,obverse:strip(c.obverse||''),reverse:strip(c.reverse||'')}));
+    if(arr.length<=1){
+      // single coin → fill the form as before
+      const p=arr[0]||{};
+      sv('f-country',p.country);sv('f-name',p.name);sv('f-reign',p.reign);sv('f-year',p.year);sv('f-adbc',p.adbc);sv('f-metal',p.metal);sv('f-denom',p.denomination);sv('f-mmgm',p.mmgm);sv('f-mint',p.mint);sv('f-off',p.officina);sv('f-obv',strip(p.obverse));sv('f-rev',strip(p.reverse));sv('f-refs',p.refs);sv('f-prov',p.provenance);
+      if(p.story&&p.story.trim())sv('f-story',p.story.trim());
+      document.getElementById('pfields').style.display='block';
+      if(p.refs&&p.name){const hit=await lookupStory(p.refs,p.name);if(hit&&hit.found){if(hit.short)sv('f-story',hit.short);if(hit.long)sv('f-story-long',hit.long);const ls=document.getElementById('story-lib-status');if(ls){ls.textContent='✓ Story loaded from library ('+hit.ref+').';ls.style.color='var(--accent-txt)';}}}
+      btn.className='btn sec';btn.textContent='↺ Re-parse';
+    }else{
+      // multiple coins → review modal (same flow as invoice extract), no costs/invoice
+      invMeta=null;                          // not an invoice batch
+      reviewCoins=arr;
+      reviewSource='text';                   // tells approveAll to use NEW status, no invoice stamp
+      reviewCoins.forEach(c=>{c._cost='';c._retail='';});
+      openReview();
+      btn.className='btn sec';btn.textContent='✦ Parse text';
+      document.getElementById('intake-st').textContent='Found '+arr.length+' coins — review and add to queue.';
+    }
+  }catch(e){btn.className='btn sec';btn.textContent='✦ Parse text';document.getElementById('intake-st').textContent='Parse error: '+e.message;}
+}
+// Standardize an era/year into scholarly style: BC after the number, AD before it.
+// e.g. ("27-14","BC/AD span") stays as given; this mainly cleans single eras and "ca.".
+function fmtEra(year,adbc){
+  if(!year)return'';
+  year=String(year).replace(/\b(ca\.?|circa|c\.|approx\.?)\s*/gi,'').trim();
+  const era=(adbc||'').toUpperCase().trim();
+  if(!era)return year;
+  return era==='AD'?('AD '+year):(year+' BC');
+}
+// kept for any callers; range formatting handled inline by the model now
+function fmtDateRange(year,adbc){return fmtEra(year,adbc);}
+
+async function doStory(){
+  const name=gv('f-name'),country=gv('f-country'),reign=gv('f-reign'),denom=gv('f-denom'),mint=gv('f-mint'),refs=gv('f-refs');
+  if(!name&&!country){document.getElementById('intake-st').textContent='Parse attribution first.';return;}
+  document.getElementById('pfields').style.display='block';
+  const btn=document.getElementById('story-btn');btn.className='btn sec dim';btn.textContent='Writing...';
+  const ls=document.getElementById('story-lib-status');
+  try{
+    // 1. Try the library first (instant reuse, no AI call)
+    const hit=await lookupStory(refs,name);
+    if(hit&&hit.found){
+      sv('f-story',hit.short||'');sv('f-story-long',hit.long||'');
+      if(ls){ls.textContent='✓ Loaded from library ('+hit.ref+'). Edit and re-save if you want to change it.';ls.style.color='var(--accent-txt)';}
+      btn.className='btn sec';btn.textContent='✍ Story';return;
+    }
+    // 2. Generate both lengths
+    const prompt=`Write TWO factual collector descriptions for this ancient coin, returned as JSON {"short":"...","long":"..."} and nothing else.
+Write plainly and factually. No flowery or frilly language, no hype, no promotional adjectives ("stunning", "magnificent", "exquisite", etc.). State what is historically true and let it stand.
+- short: a tag description, 45-60 words, ending on a complete sentence.
+- long: a longer livestream version to read aloud, 90-130 words, factual and historical.
+Coin: ${country}, ${name}${reign?' ('+reign+')':''}, ${denom}${mint?', minted at '+mint:''}${refs?'. Reference: '+refs:''}.`;
+    const raw=await claude([{role:'user',content:prompt}],700);
+    let s;try{s=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch(e){s={short:raw.trim(),long:''};}
+    sv('f-story',(s.short||'').trim());sv('f-story-long',(s.long||'').trim());
+    if(ls){ls.textContent='Generated fresh. Tap “Save story to library” to reuse it for this reference next time.';ls.style.color='var(--txt3)';}
+    btn.className='btn sec';btn.textContent='✍ Story';
+  }catch(e){btn.className='btn sec';btn.textContent='✍ Story';document.getElementById('intake-st').textContent='Story error: '+e.message;}
+}
+// Fallback when a coin has no notable story: assemble historical CONTEXT from its data —
+// period+place events, ruler bio, and/or reverse deity/type meaning. Fills both lengths.
+async function doContext(){
+  const name=gv('f-name'),country=gv('f-country'),reign=gv('f-reign'),denom=gv('f-denom'),mint=gv('f-mint'),refs=gv('f-refs');
+  const year=gv('f-year'),adbc=gv('f-adbc'),rev=gv('f-rev');
+  if(!country&&!name&&!year){document.getElementById('intake-st').textContent='Parse or enter the coin details first.';return;}
+  document.getElementById('pfields').style.display='block';
+  const btn=document.getElementById('context-btn');btn.className='btn sec dim';btn.textContent='Researching...';
+  const ls=document.getElementById('story-lib-status');
+  const dateStr=[year,adbc].filter(Boolean).join(' ');
+  try{
+    const prompt=`This ancient coin may have no famous individual "story" — instead provide useful HISTORICAL CONTEXT a dealer can put on a tag and read on a livestream. Return ONLY JSON {"short":"...","long":"..."}.
+
+Choose the most relevant angle(s) from what is given:
+- If a ruler is named, include a brief bio (who they were, when they ruled, what they're known for).
+- If the reverse names or depicts a deity/personification/type, briefly explain who/what it is and what it signified.
+- If it is an anonymous or un-attributed issue (no notable person), focus on the PERIOD and PLACE: what was happening in that era and region — key events, conflicts, or political context around that date.
+
+- short: 45-60 words, tag-ready, ending on a complete sentence.
+- long: 90-130 words, livestream-ready.
+Write plainly and factually — no flowery or frilly language, no hype, no promotional adjectives. Be factual and avoid inventing specifics you are unsure of; if a date is approximate, speak generally rather than asserting precise events.
+
+Coin data: culture/region = ${country||'?'}; ruler/issuer = ${name||'(anonymous)'}; reign = ${reign||'?'}; date = ${dateStr||'?'}; denomination = ${denom||'?'}; mint = ${mint||'?'}; reverse = ${rev||'?'}; reference = ${refs||'?'}.`;
+    const raw=await claude([{role:'user',content:prompt}],800);
+    let s;try{s=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch(e){s={short:raw.trim(),long:''};}
+    sv('f-story',(s.short||'').trim());sv('f-story-long',(s.long||'').trim());
+    if(ls){ls.textContent='⚠ Context generated — historical claims (dates, events, deities) can be wrong. Verify before saving to the library.';ls.style.color='var(--warn-txt)';}
+    btn.className='btn sec';btn.textContent='🏛 Context';
+  }catch(e){btn.className='btn sec';btn.textContent='🏛 Context';document.getElementById('intake-st').textContent='Context error: '+e.message;}
+}
+async function lookupStory(refs,issuer){
+  if(!getScriptUrl()||!refs)return null;
+  try{return await callScript('storyget',{ref:refs,issuer:issuer||''});}catch(e){return null;}
+}
+async function saveStoryToLib(){
+  const refs=gv('f-refs'),name=gv('f-name'),short=gv('f-story'),long=gv('f-story-long');
+  const ls=document.getElementById('story-lib-status');
+  if(!refs){if(ls){ls.textContent='Add a reference (e.g. RIC V 100) first — the library is keyed by reference.';ls.style.color='var(--warn-txt)';}return;}
+  if(!short&&!long){if(ls){ls.textContent='Write or generate a story first.';ls.style.color='var(--warn-txt)';}return;}
+  if(ls){ls.textContent='Saving...';ls.style.color='var(--txt3)';}
+  try{
+    const r=await callScript('storysave',{ref:refs,issuer:name,short,long});
+    if(ls){ls.textContent=r.updated?'✓ Updated in library for '+refs:'✓ Saved to library for '+refs+'. It will auto-fill next time.';ls.style.color='var(--accent-txt)';}
+  }catch(e){if(ls){ls.textContent='Save error: '+e.message;ls.style.color='var(--danger-txt)';}}
+}
+
+// ── REFERENCE LINKS + AI SUGGESTION ──────────────
+// Opens a reference site in a new tab, pre-filling its search where supported.
+function openRef(site){
+  const q=encodeURIComponent([gv('f-name'),gv('f-reign'),gv('f-denom'),gv('f-mint')].filter(Boolean).join(' '));
+  const urls={
+    acsearch:q?`https://www.acsearch.info/search.html?term=${q}`:'https://www.acsearch.info/',
+    rpc:q?`https://rpc.ashmus.ox.ac.uk/search/coins?q=${q}`:'https://rpc.ashmus.ox.ac.uk/',
+    ocre:q?`http://numismatics.org/ocre/results?q=${q}`:'http://numismatics.org/ocre/',
+    crro:q?`http://numismatics.org/crro/results?q=${q}`:'http://numismatics.org/crro/',
+    wildwinds:'https://www.wildwinds.com/coins/',
+    coincabinet:'https://coincabinet.io/'
+  };
+  window.open(urls[site]||urls.acsearch,'_blank','noopener');
+}
+// AI best-guess at a catalog reference + rough price band. ALWAYS verify on ACSearch.
+async function doRefSuggest(){
+  const desc=[gv('f-country'),gv('f-name'),gv('f-reign'),gv('f-metal'),gv('f-denom'),gv('f-mint'),gv('f-obv')?'Obv: '+gv('f-obv'):'',gv('f-rev')?'Rev: '+gv('f-rev'):''].filter(Boolean).join('; ');
+  const out=document.getElementById('ref-out');
+  if(!desc){document.getElementById('intake-st').textContent='Fill in or parse the coin details first.';return;}
+  const btn=document.getElementById('ref-btn');btn.className='btn sec dim';btn.textContent='Thinking...';
+  out.style.display='block';out.innerHTML='Looking up likely references...';
+  try{
+    const r=await claude([{role:'user',content:`You are a numismatic reference assistant. For this coin, give your BEST GUESS at the most likely standard catalog reference number(s) (e.g. RIC, Crawford, RPC, Sear, Sydenham/SNG as appropriate) and a rough retail price range in USD. Be concise. If you are unsure, say so honestly rather than inventing a number.
+
+Coin: ${desc}
+
+Format your answer as:
+Likely ref: <number(s) or "uncertain">
+Rough range: $<low>–$<high>
+Note: <one short line, e.g. confidence or what to check>`}],400);
+    out.innerHTML='<b>AI suggestion — verify before trusting:</b><br>'+r.trim().replace(/\n/g,'<br>')+'<br><br><span style="color:var(--txt3)">⚠ This is an unverified guess from the model, with no live market data. Confirm the reference and price on ACSearch.</span>';
+  }catch(e){out.innerHTML='Error: '+e.message;}
+  btn.className='btn sec';btn.textContent='🔎 Suggest ref';
+}
+
+// ── PHOTOS ───────────────────────────────────────
+async function onPhoto(side,input){
+  const file=input.files[0];if(!file)return;
+  const slot=document.getElementById('ps-'+side);
+  const st=document.getElementById('photo-st');
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    slot.innerHTML=`<img src="${e.target.result}" alt="${side}" style="width:100%;height:100%;object-fit:cover"/>`;
+    if(!getScriptUrl()){photoLinks[side]='';st.textContent='⚠ Connect your sheet in Settings to store photos in Drive.';return;}
+    const sku=pubSKU();
+    st.textContent='Uploading '+side+' for '+sku+'…';
+    try{
+      const b64=e.target.result.split(',')[1];
+      const mime=file.type||'image/jpeg';
+      const d=await callScript('photo',{sku:sku,side:side,data:b64,mime:mime});
+      photoLinks[side]=d.url||'';
+      st.textContent='✓ '+side+' → Drive as '+(d.name||(sku+'_'+side));
+    }catch(err){photoLinks[side]='';st.textContent='✗ '+side+' upload failed: '+err.message;}
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── QUEUE ────────────────────────────────────────
+function collectCoin(){
+  const g=document.querySelector('.gb.on');
+  return{internalSKU:intSKU(),publicSKU:pubSKU(),seq:S.seq,country:gv('f-country'),name:gv('f-name'),reign:gv('f-reign'),year:gv('f-year'),adbc:gv('f-adbc'),metal:normMetal(gv('f-metal')),denom:gv('f-denom'),mmgm:gv('f-mmgm'),mint:gv('f-mint'),officina:gv('f-off'),obverse:gv('f-obv'),reverse:gv('f-rev'),refs:gv('f-refs'),condition:gv('f-cond'),provenance:gv('f-prov'),story:gv('f-story'),storyLong:gv('f-story-long'),price:gv('f-price'),cost:gv('f-cost'),vendor:gv('f-vendor'),lot:gv('f-lot'),date:gv('f-date'),location:gv('f-location'),status:gv('f-status')||'NEW',src:S.src,consignor:S.src==='CN'?gv('f-consignor'):'',consignPct:S.src==='CN'?gv('f-consign-pct'):'',grade:g?g.dataset.g:'',photoObv:photoLinks.obv,photoRev:photoLinks.rev,photoStitch:photoLinks.stitch};
+}
+
+function resetForm(){
+  ['f-country','f-name','f-reign','f-year','f-adbc','f-metal','f-denom','f-mmgm','f-mint','f-off','f-obv','f-rev','f-refs','f-cond','f-cond-other','f-prov','f-story','f-story-long','f-price','f-cost'].forEach(id=>sv(id,''));
+  sv('attr-text','');sv('f-status','NEW');document.getElementById('pfields').style.display='none';
+  // f-tray is left sticky for batch intake; clear only the square selection
+  traySquare='';applySquareHighlight();updLoc();
+  document.querySelectorAll('.gb.on').forEach(b=>b.classList.remove('on'));
+  Object.keys(condState).forEach(k=>{condState[k]='none';updPill(k);});
+  document.getElementById('cipher-out').textContent='—';document.getElementById('cipher-out').className='cipher';
+  ['obv','rev','stitch'].forEach(s=>{photoLinks[s]='';const slot=document.getElementById('ps-'+s);if(slot)slot.innerHTML=`<div class="photo-icon">📷</div><div class="photo-lbl">${s.charAt(0).toUpperCase()+s.slice(1)}</div><input type="file" id="ph-${s}" accept="image/*" style="display:none" onchange="onPhoto('${s}',this)"/>`;});
+  document.getElementById('photo-st').textContent='';
+  if(editIdx<0){S.seq++;updSKU();}
+  editIdx=-1;
+  document.getElementById('q-btn').textContent='+ Queue';document.getElementById('q-btn').onclick=()=>addToQueue();
+  document.getElementById('s-btn').textContent='+ Submit now';document.getElementById('s-btn').className='btn pri';document.getElementById('s-btn').onclick=()=>addToQueue(true);
+}
+
+function addToQueue(submitNow){
+  if(editIdx>=0){saveEdit();return;}
+  const coin=collectCoin();
+  if(!coin.vendor){document.getElementById('intake-st').textContent='Please enter a vendor.';return;}
+  if(!coin.cost){document.getElementById('intake-st').textContent='Please enter cost paid.';return;}
+  queue.push(coin);saveQ();renderQueue();resetForm();
+  document.getElementById('intake-st').textContent=`Added to queue (${queue.length} coin${queue.length>1?'s':''})`;
+  if(submitNow)submitAll();
+}
+
+function editQueueItem(i){
+  const c=queue[i];if(!c)return;editIdx=i;
+  sv('f-country',c.country);sv('f-name',c.name);sv('f-reign',c.reign);sv('f-year',c.year);sv('f-adbc',c.adbc);sv('f-metal',c.metal);sv('f-denom',c.denom);sv('f-mmgm',c.mmgm);sv('f-mint',c.mint);sv('f-off',c.officina);sv('f-obv',c.obverse);sv('f-rev',c.reverse);sv('f-refs',c.refs);sv('f-cond',c.condition);sv('f-prov',c.provenance);sv('f-story',c.story);sv('f-story-long',c.storyLong||'');sv('f-price',c.price);sv('f-cost',c.cost);sv('f-vendor',c.vendor);sv('f-lot',c.lot);sv('f-date',c.date);sv('f-status',c.status||'NEW');
+  {const loc=c.location||'';const mm=loc.match(/^(.*)-([A-D][1-6])$/);if(mm){sv('f-tray',mm[1]);traySquare=mm[2];}else{sv('f-tray',loc);traySquare='';}applySquareHighlight();updLoc();}
+  S.src=c.src||'AH';document.querySelectorAll('.src').forEach(b=>b.classList.toggle('on',b.dataset.code===S.src));
+  S.vfull=c.vendor;S.vcode='';onCost();
+  document.getElementById('pfields').style.display='block';
+  document.getElementById('intake-st').textContent='Editing coin '+(i+1)+' — make changes then tap Save';
+  document.getElementById('q-btn').textContent='💾 Save changes';document.getElementById('q-btn').onclick=saveEdit;
+  document.getElementById('s-btn').textContent='✕ Cancel';document.getElementById('s-btn').className='btn sec';document.getElementById('s-btn').onclick=()=>{editIdx=-1;resetForm();document.getElementById('intake-st').textContent='';};
+  window.scrollTo(0,0);
+}
+
+function saveEdit(){
+  if(editIdx<0)return;
+  const coin=collectCoin();coin.internalSKU=queue[editIdx].internalSKU;coin.publicSKU=queue[editIdx].publicSKU;coin.seq=queue[editIdx].seq;
+  queue[editIdx]=coin;editIdx=-1;saveQ();renderQueue();resetForm();
+  document.getElementById('intake-st').textContent='Changes saved.';
+}
+
+function removeFromQueue(i){queue.splice(i,1);saveQ();renderQueue();}
+
+function renderQueue(){
+  const wrap=document.getElementById('queue-wrap');const list=document.getElementById('queue-list');const cnt=document.getElementById('q-count');
+  if(!wrap||!list||!cnt)return;
+  cnt.textContent=queue.length;wrap.style.display=queue.length?'block':'none';
+  list.innerHTML=queue.map((c,i)=>`<div class="qi">
+    <div class="qi-info">
+      <div class="qi-sku">${c.internalSKU} · ${c.publicSKU}</div>
+      <div class="qi-name">${c.name||'Unknown'}</div>
+      <div class="qi-meta">${[c.country,c.metal,c.denom].filter(Boolean).join(' · ')}</div>
+      <div class="qi-meta">Cost: $${c.cost}${c.price?' · Retail: $'+c.price:''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+      <button class="sm" onclick="editQueueItem(${i})" style="font-size:11px">✏ Edit</button>
+      <button class="qi-del" onclick="removeFromQueue(${i})">×</button>
+    </div>
+  </div>`).join('');
+}
+
+async function submitAll(){
+  if(!queue.length)return;
+  const btn=document.getElementById('submit-all-btn');const st=document.getElementById('queue-st');
+  btn.textContent='Submitting...';btn.className='sm dim';st.textContent='';
+  try{
+    const rows=queue.map(c=>{
+      const notes='';  // Public SKU, Provenance, and Story now have dedicated columns
+      return[
+        c.internalSKU,                       // A  SKU
+        c.publicSKU||'',                     // B  Public SKU
+        c.price||'',                         // C  Price (retail)
+        c.country,                           // D  Country
+        c.name,                              // E  Name
+        c.reign,                             // F  Reign
+        c.metal,                             // G  Metal Type
+        c.denom,                             // H  Denomination
+        c.mmgm,                              // I  mm, gm
+        c.mint,                              // J  Mint Location
+        c.adbc,                              // K  AD/BC
+        c.year,                              // L  Mint Year
+        c.officina||'',                      // M  Officina
+        c.obverse,                           // N  Obverse
+        c.reverse,                           // O  Reverse
+        c.refs,                              // P  Refs
+        c.condition,                         // Q  Condition
+        c.provenance||'',                    // R  Provenance
+        notes,                               // S  Notes
+        c.story||'',                         // T  Story
+        c.cost?'$'+c.cost:'',                // U  Price Purchased (cost)
+        c.vendor+(c.lot?', Lot '+c.lot:''),  // V  Purchased From
+        c.date,                              // W  Purchase Date
+        '',                                  // X  Price Sold       (set on sale)
+        '',                                  // Y  Sold Date        (set on sale)
+        '',                                  // Z  Lot Number        (set on sale)
+        '',                                  // AA Venue Sold        (set on sale)
+        '',                                  // AB Client Name       (set on sale)
+        '',                                  // AC Client Address    (set on sale)
+        '',                                  // AD Gain (loss)       (set on sale)
+        '',                                  // AE Margin            (set on sale)
+        c.photoObv||'',                      // AF Obv Photo
+        c.photoRev||'',                      // AG Rev Photo
+        c.photoStitch||'',                   // AH Stitched Photo
+        c.location||'',                      // AI Location (tray)
+        c.status||'NEW',                     // AJ Status
+        c.consignor||'',                     // AK Consignor
+        c.consignPct||''                     // AL Consign cut %
+      ];
+    });
+    await sheetsAppend(rows);
+    btn.textContent='✓ Submitted';btn.className='sm ok';
+    st.textContent=`${queue.length} coin(s) written to sheet.`;
+    printSel=[...printSel,...queue];wnSel=[...wnSel,...queue];
+    queue=[];saveQ();renderQueue();fetchNextSeq();
+    setTimeout(()=>{btn.textContent='Submit all';btn.className='sm pri';},3000);
+  }catch(e){
+    btn.textContent='Failed';btn.className='sm';
+    st.textContent='Error: '+e.message;
+    setTimeout(()=>{btn.textContent='Submit all';btn.className='sm pri';},4000);
+  }
+}
+
+// ── SALE ─────────────────────────────────────────
+function onSaleSearch(){
+  const q=gv('sale-search').trim();
+  document.getElementById('sale-clear').style.display=q?'block':'none';
+  clearTimeout(saleSearchT);
+  if(q.length<2){document.getElementById('sale-results').innerHTML='';return;}
+  saleSearchT=setTimeout(()=>doSaleSearch(q),600);
+}
+function clearSaleSearch(){sv('sale-search','');document.getElementById('sale-clear').style.display='none';document.getElementById('sale-results').innerHTML='';}
+async function doSaleSearch(q){
+  const res=document.getElementById('sale-results');res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px;text-align:center">Searching...</p>';
+  try{
+    const coins=await sheetsSearch(q);
+    if(!coins.length){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px;text-align:center">No coins found.</p>';return;}
+    res.innerHTML=coins.map(c=>`<div class="cc" onclick='addToCart(${JSON.stringify(c).replace(/'/g,"&apos;")})'>
+      <div class="cc-sku">${c.sku||'—'} <span class="badge ${c.price_sold?'bd':'bs'}">${c.price_sold?'Sold':'Available'}</span></div>
+      <div class="cc-name">${c.name||'Unknown'}</div>
+      <div class="cc-meta">${[c.country,c.denomination,c.reign].filter(Boolean).join(' · ')}</div>
+      <div class="cc-cost">List: ${c.price?'$'+c.price:'—'} · Cost: ${c.price_purchased||'—'}${c.location?' · 📍 '+c.location:''}</div>
+    </div>`).join('');
+  }catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px;text-align:center">Search error: '+e.message+'</p>';}
+}
+// ── INVOICE CART ─────────────────────────────────
+let cart=[];
+const PLAN_TERMS={0:[0,0],15:[0,0],30:[0.10,0.01],60:[0.15,0.025],90:[0.20,0.05],120:[0.25,0.10]};
+function addToCart(coin){
+  if(cart.some(c=>c.row_number===coin.row_number)){return;}
+  const listed=parseFloat(String(coin.price||'').replace(/[^0-9.]/g,''))||0;
+  cart.push({...coin,_salePrice:listed});
+  document.getElementById('cart-wrap').style.display='block';
+  document.getElementById('sale-date').value=new Date().toISOString().split('T')[0];
+  clearSaleSearch();renderCart();
+}
+function removeFromCart(i){cart.splice(i,1);renderCart();if(!cart.length)document.getElementById('cart-wrap').style.display='none';}
+function setCartPrice(i,v){cart[i]._salePrice=parseFloat(v)||0;renderCart();}
+function renderCart(){
+  const box=document.getElementById('cart-items');
+  box.innerHTML=cart.map((c,i)=>`<div class="qi"><div class="qi-info"><div class="qi-sku">${c.sku||c.public_sku||''}</div><div class="qi-name">${c.name||'Unknown'}</div></div>
+    <input type="number" value="${c._salePrice||''}" oninput="setCartPrice(${i},this.value)" style="width:90px;padding:6px 8px;font-size:13px" placeholder="price"/>
+    <button class="qi-del" onclick="removeFromCart(${i})">×</button></div>`).join('');
+  renderTotals();
+}
+function invCalc(){
+  const subtotal=cart.reduce((a,c)=>a+(parseFloat(c._salePrice)||0),0);
+  const shipping=parseFloat(gv('inv-shipping'))||0;
+  const days=parseInt(gv('inv-plan'))||0;
+  const [dpPct,intPct]=PLAN_TERMS[days]||[0,0];
+  const base=subtotal+shipping;
+  const interest=+(base*intPct).toFixed(2);
+  const total=+(base+interest).toFixed(2);
+  const down=+(base*dpPct).toFixed(2);
+  const remaining=+(total-down).toFixed(2);
+  let due='';
+  if(days>0){const d=new Date(gv('sale-date')||Date.now());d.setDate(d.getDate()+days);due=d.toISOString().split('T')[0];}
+  return {subtotal,shipping,days,dpPct,intPct,interest,total,down,remaining,due};
+}
+function money(n){return '$'+(Math.round(n*100)/100).toFixed(2);}
+function renderTotals(){
+  const t=invCalc();const box=document.getElementById('inv-totals');
+  let h=`<div>Subtotal: <b>${money(t.subtotal)}</b></div>`;
+  if(t.shipping)h+=`<div>Shipping: ${money(t.shipping)}</div>`;
+  if(t.days>0){
+    h+=`<div>Plan: <b>${t.days}-day</b> · interest ${(t.intPct*100)}% = ${money(t.interest)}</div>`;
+    h+=`<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">Total: <b>${money(t.total)}</b></div>`;
+    h+=`<div>Down payment now (${t.dpPct*100}%): <b>${money(t.down)}</b></div>`;
+    h+=`<div>Remaining balance: <b>${money(t.remaining)}</b> by <b>${t.due}</b></div>`;
+  }else{
+    h+=`<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">Total due: <b>${money(t.total)}</b></div>`;
+  }
+  box.innerHTML=h;
+}
+function selVenue(b){document.querySelectorAll('.vb').forEach(x=>x.classList.remove('on'));b.classList.add('on');selVenueVal=b.dataset.v;document.getElementById('wn-extra').className=selVenueVal==='Whatnot'?'xf on':'xf';}
+
+// ── INVOICE PDF ──────────────────────────────────
+async function buildInvoicePDF(invNo){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'letter'});
+  const t=invCalc();const M=48;let y=54;const W=doc.internal.pageSize.getWidth();
+  // logo
+  const logo=getLogo();
+  if(logo){try{doc.addImage(logo,'JPEG',M,y-10,90,90);}catch(e){}}
+  // business block (right)
+  doc.setFont('helvetica','bold');doc.setFontSize(16);
+  doc.text(localStorage.getItem('hh_biz_name')||'Handheld History Collectables',W-M,y,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  const addr=(localStorage.getItem('hh_biz_addr')||'PO Box 101\nJenkintown, PA 19046').split('\n');
+  let yy=y+16;addr.forEach(l=>{doc.text(l,W-M,yy,{align:'right'});yy+=12;});
+  const contact=localStorage.getItem('hh_biz_contact')||'';if(contact){doc.text(contact,W-M,yy,{align:'right'});yy+=12;}
+  // QR under business block
+  const qr=getQR();if(qr){try{doc.addImage(qr,'PNG',W-M-54,yy+2,54,54);}catch(e){}}
+  y=Math.max(y+96,yy+64);
+  // invoice title
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('INVOICE',M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text('Invoice #: '+invNo,M,y+16);
+  doc.text('Date: '+(gv('sale-date')||new Date().toISOString().split('T')[0]),M,y+30);
+  // buyer
+  const bn=gv('buyer-name'),ba=gv('buyer-addr');
+  if(bn||ba){doc.setFont('helvetica','bold');doc.text('Bill to:',W-M-160,y+16);doc.setFont('helvetica','normal');
+    let by=y+30;if(bn){doc.text(bn,W-M-160,by);by+=12;}(ba?ba.split('\n'):[]).forEach(l=>{doc.text(l,W-M-160,by);by+=12;});}
+  y+=54;
+  // line items table
+  doc.setFont('helvetica','bold');doc.setFontSize(10);
+  doc.text('SKU',M,y);doc.text('Description',M+90,y);doc.text('Price',W-M,y,{align:'right'});
+  doc.setLineWidth(0.5);doc.line(M,y+4,W-M,y+4);y+=18;
+  doc.setFont('helvetica','normal');
+  cart.forEach(c=>{
+    doc.text(String(c.public_sku||c.sku||''),M,y);
+    const desc=[c.name,c.denomination,c.reign].filter(Boolean).join(', ').slice(0,52);
+    doc.text(desc,M+90,y);
+    doc.text(money(parseFloat(c._salePrice)||0),W-M,y,{align:'right'});
+    y+=16;
+  });
+  doc.line(M,y,W-M,y);y+=16;
+  // totals — label right-aligned at a fixed gutter, value right-aligned at margin, so they never collide
+  const valX=W-M;            // value right edge
+  const labX=W-M-90;         // value left edge / label right edge (90pt reserved for the number)
+  const rt=(label,val,bold)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.text(label,labX,y,{align:'right'});doc.text(val,valX,y,{align:'right'});y+=15;};
+  rt('Subtotal',money(t.subtotal));
+  if(t.shipping)rt('Shipping',money(t.shipping));
+  if(t.days>0)rt('Plan interest ('+(t.intPct*100)+'%)',money(t.interest));
+  rt('Total',money(t.total),true);
+  if(t.days>0){y+=4;rt('Down payment now ('+(t.dpPct*100)+'%)',money(t.down),true);rt('Remaining balance',money(t.remaining),true);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Balance due by '+t.due+' ('+t.days+'-day plan).',valX,y,{align:'right'});y+=16;}
+  y+=10;
+  // payment methods
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('Payment options',M,y);y+=16;
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);
+  const methods=[];
+  methods.push('Cash');methods.push('Check (payable to '+(localStorage.getItem('hh_biz_name')||'Handheld History')+')');
+  const pp=localStorage.getItem('hh_pay_paypal');if(pp)methods.push('PayPal: '+pp+'  (F&F or G&S)');
+  const vm=localStorage.getItem('hh_pay_venmo');if(vm)methods.push('Venmo: '+vm+'  (F&F or G&S)');
+  const ca=localStorage.getItem('hh_pay_cashapp');if(ca)methods.push('CashApp: '+ca);
+  const ze=localStorage.getItem('hh_pay_zelle');if(ze)methods.push('Zelle: '+ze);
+  methods.forEach(m=>{doc.text('•  '+m,M,y);y+=13;});
+  y+=12;doc.setFontSize(8.5);doc.setTextColor(120);
+  doc.text('Thank you for your business. All coins guaranteed for life.',M,y);
+  return doc;
+}
+async function invoicePDF(mode){
+  const st=document.getElementById('sale-st');
+  if(!cart.length){st.textContent='Add at least one coin.';return;}
+  st.textContent='Generating PDF...';
+  try{
+    const invNo=window._pendingInv||('DRAFT');
+    const doc=await buildInvoicePDF(invNo);
+    if(mode==='download'){doc.save('Invoice_'+invNo+'.pdf');st.textContent='PDF downloaded.';}
+    else if(mode==='send'){
+      const contact=gv('buyer-contact').trim();
+      const blob=doc.output('blob');const url=URL.createObjectURL(blob);
+      // open the PDF so the user can share it via their own app
+      window.open(url,'_blank');
+      const subj=encodeURIComponent('Invoice '+invNo+' — Handheld History');
+      const body=encodeURIComponent('Hi'+(gv('buyer-name')?' '+gv('buyer-name'):'')+', attached is your invoice. Thank you!');
+      if(contact.includes('@')){window.location.href='mailto:'+contact+'?subject='+subj+'&body='+body;}
+      else if(contact){window.location.href='sms:'+contact+'?&body='+body;}
+      st.textContent='PDF opened — attach it in the message that opened, or use your share button.';
+    }
+  }catch(e){st.textContent='PDF error: '+e.message;}
+}
+// ── CERTIFICATE OF AUTHENTICITY (4 per Letter page) ──────────────
+// Get a Drive image as a data URL. Routes through the Apps Script (runs as owner,
+// no CORS/sharing issues) rather than fetching the Drive URL from the browser.
+async function imgToData(url){
+  if(!url)return '';
+  try{
+    const r=await callScript('getimage',{id:url});
+    if(r&&r.ok&&r.data)return 'data:'+(r.mime||'image/jpeg')+';base64,'+r.data;
+    return '';
+  }catch(e){return '';}
+}
+async function genCOA(){
+  const st=document.getElementById('coa-st');
+  if(!printSel.length){st.textContent='Select at least one coin (above) first.';return;}
+  st.textContent='Generating certificates...';
+  try{
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'letter'});
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight();
+    const cw=W/2, ch=H/2;                     // quarter-page cell
+    const logo=getLogo(), qr=getQR();
+    const biz=localStorage.getItem('hh_biz_name')||'Handheld History Collectables';
+    for(let i=0;i<printSel.length;i++){
+      const c=printSel[i];
+      const cellIdx=i%4;
+      if(i>0&&cellIdx===0)doc.addPage();
+      const col=cellIdx%2, row=Math.floor(cellIdx/2);
+      const x=col*cw, y=row*ch;
+      await drawCOA(doc,c,x,y,cw,ch,{logo,qr,biz});
+    }
+    doc.save('COA_'+(printSel.length===1?(printSel[0].publicSKU||printSel[0].sku||'coin'):printSel.length+'coins')+'.pdf');
+    st.textContent=printSel.length+' certificate'+(printSel.length!==1?'s':'')+' generated (4 per page — cut on the borders).';
+  }catch(e){st.textContent='COA error: '+e.message;}
+}
+async function drawCOA(doc,c,x,y,cw,ch,assets){
+  const pad=14;const innerW=cw-pad*2;
+  // cut border
+  doc.setDrawColor(180);doc.setLineWidth(0.5);doc.rect(x+5,y+5,cw-10,ch-10);
+  // logo — full-bleed into the top-right corner (arm pops in toward the page)
+  if(assets.logo){try{
+    const lw=70, lh=70;
+    doc.addImage(assets.logo,'JPEG',x+cw-lw-2,y+2,lw,lh);
+  }catch(e){}}
+  let cy=y+pad+6;
+  // header (left, clear of the logo)
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(20);
+  doc.text('Certificate of',x+pad,cy+8);
+  doc.text('Authenticity',x+pad,cy+20);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(90);
+  doc.text(assets.biz,x+pad,cy+32);
+  cy+=46;
+  // coin identity
+  const sku=c.publicSKU||c.sku||'';
+  doc.setTextColor(20);doc.setFont('helvetica','bold');doc.setFontSize(8.5);
+  const title=[c.country,c.name].filter(Boolean).join(' — ')||c.name||'Ancient Coin';
+  doc.text(doc.splitTextToSize(title,innerW),x+pad,cy);cy+=11;
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(60);
+  const dateStr=fmtCoinDate(c.year,c.adbc);
+  const idline=[normMetal(c.metal||c.metalType),capDenom(c.denom||c.denomination),c.mmgm,c.mint||c.mintLocation,dateStr].filter(Boolean).join(' · ');
+  let idw=doc.splitTextToSize(idline,innerW);doc.text(idw,x+pad,cy);cy+=idw.length*8;
+  if(c.refs){const rw=doc.splitTextToSize('Ref: '+c.refs,innerW);doc.text(rw,x+pad,cy);cy+=rw.length*8;}
+  // photos row
+  let photoData=[];
+  if(c.photoStitch){const d=await imgToData(c.photoStitch);if(d)photoData=[d];}
+  else{const o=await imgToData(c.photoObv),r=await imgToData(c.photoRev);photoData=[o,r].filter(Boolean);}
+  if(photoData.length){
+    cy+=3;const ph=58; const pw=photoData.length===1?innerW*0.46:innerW*0.44;
+    let px=x+pad;
+    photoData.forEach(d=>{try{doc.addImage(d,'JPEG',px,cy,pw,ph,undefined,'FAST');}catch(e){}px+=pw+8;});
+    cy+=ph+6;
+  }
+  // authenticity statement (the full text, small)
+  doc.setFontSize(5.6);doc.setTextColor(45);
+  const paras=[
+    'All items offered by '+assets.biz.replace(' Collectables','')+' are guaranteed authentic and genuine unless explicitly stated otherwise in the item description.',
+    'Each coin is carefully examined and attributed using standard numismatic references, comparative research, and professional experience in the ancient coin market. Coins are acquired from established auction houses, reputable dealers, long-standing collections, or other trusted sources whenever possible.',
+    'Should a coin purchased from '+assets.biz.replace(' Collectables','')+' ever be demonstrated to be non-authentic by generally accepted numismatic standards, the coin may be returned for a full refund of the original purchase price. This guarantee extends for the lifetime of the coin and applies to authenticity only. It does not cover differences of scholarly opinion regarding attribution, grading, strike quality, centering, style, historical interpretation, provenance, or market value.',
+    'Because ancient coins are individually hand-struck artifacts over a millennium old, variations in strike, wear, flan shape, patina, metal quality, and artistic style should be expected and do not constitute grounds for a return based on authenticity.',
+    'Handheld History is committed to ethical numismatics, accurate descriptions, and complete transparency in all transactions.'
+  ];
+  const footTop=y+ch-pad-26;
+  paras.forEach(p=>{
+    const w=doc.splitTextToSize(p,innerW);
+    if(cy+w.length*6.4 < footTop){doc.text(w,x+pad,cy);cy+=w.length*6.4+2.5;}
+  });
+  // footer: cert no + SKU + date (left), QR (right), signature line
+  const fy=footTop;
+  doc.setFontSize(6.5);doc.setTextColor(90);
+  doc.text('Certificate No: HH-'+sku+'   ·   SKU: '+sku+'   ·   Issued: '+new Date().toISOString().split('T')[0],x+pad,fy);
+  if(assets.qr){try{doc.addImage(assets.qr,'PNG',x+cw-pad-30,fy-2,30,30);}catch(e){}}
+  doc.setDrawColor(120);doc.line(x+pad,fy+16,x+pad+110,fy+16);
+  doc.setFontSize(6);doc.text('Authorized signature, Handheld History',x+pad,fy+24);
+}
+function makeICS(invNo,t){
+  const dt=t.due.replace(/-/g,'');
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT',
+    'DTSTART;VALUE=DATE:'+dt,'SUMMARY:Payment due — Invoice '+invNo+' ('+gv('buyer-name')+')',
+    'DESCRIPTION:Remaining balance '+money(t.remaining)+' due from '+gv('buyer-name')+' for invoice '+invNo+'.',
+    'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  return 'data:text/calendar;charset=utf8,'+encodeURIComponent(ics);
+}
+async function completeSale(){
+  const st=document.getElementById('sale-st');const btn=document.getElementById('sale-btn');
+  if(!cart.length){st.textContent='Add at least one coin.';return;}
+  if(!selVenueVal){st.textContent='Select a venue.';return;}
+  btn.className='btn dim';btn.textContent='Completing...';st.textContent='';
+  const t=invCalc();
+  let venue=selVenueVal,lot='';
+  if(selVenueVal==='Whatnot'){const show=gv('wn-show');lot=gv('wn-lot');if(show)venue='Whatnot — '+show;}
+  const date=gv('sale-date')||new Date().toISOString().split('T')[0];
+  try{
+    // get invoice number
+    const ni=await callScript('nextinvoice',{});const invNo=ni.next||1001;window._pendingInv=invNo;
+    // mark each coin sold on the inventory tab
+    let consignPayouts=[];
+    for(const c of cart){
+      const sale=parseFloat(c._salePrice)||0;
+      let gain,margin;
+      const cpct=parseFloat(String(c.consign_pct||'').replace(/[^0-9.]/g,''));
+      if(c.consignor&&cpct>0){
+        // consignment: your earning is your cut; consignor gets the rest
+        const yourCut=+(sale*cpct/100).toFixed(2);
+        const payout=+(sale-yourCut).toFixed(2);
+        gain=yourCut.toFixed(2);margin=cpct+'% cut';
+        consignPayouts.push({consignor:c.consignor,sku:c.public_sku||c.sku,sale:sale,cut:yourCut,payout:payout});
+      }else{
+        const cost=parseFloat(String(c.price_purchased||'0').replace(/[^0-9.]/g,''))||0;
+        gain=(sale-cost).toFixed(2);margin=cost>0?((sale-cost)/cost*100).toFixed(1)+'%':'';
+      }
+      await sheetsUpdate(c.row_number,'X',['$'+sale.toFixed(2),date,lot,venue,gv('buyer-name'),gv('buyer-addr'),'$'+gain,margin]);
+    }
+    // build PDF and log the invoice (with PDF upload)
+    const doc=await buildInvoicePDF(invNo);
+    const pdfB64=doc.output('datauristring').split(',')[1];
+    const status=t.days>0?'Partial':'Unpaid';
+    const consignNote=consignPayouts.length?consignPayouts.map(p=>p.consignor+' owed $'+p.payout.toFixed(2)+' ('+p.sku+')').join('; '):'';
+    await callScript('logsale',{
+      invoice:invNo,date,buyer:gv('buyer-name'),buyer_contact:gv('buyer-contact'),
+      skus:cart.map(c=>c.public_sku||c.sku).join(', '),
+      subtotal:money(t.subtotal),shipping:t.shipping?money(t.shipping):'',interest:t.days>0?money(t.interest):'',
+      total:money(t.total),plan:t.days>0?(t.days+'-day'):'Paid in full',
+      down:t.days>0?money(t.down):'',remaining:t.days>0?money(t.remaining):'',
+      due:t.due,status,payment:'',consign:consignNote,pdf:pdfB64
+    });
+    btn.className='btn ok';btn.textContent='✓ Sale #'+invNo+' logged';
+    st.textContent=`Invoice ${invNo} saved to Sales tab, PDF in Drive. ${cart.length} coin(s) marked sold.`;
+    // calendar reminder for plans
+    if(t.days>0){
+      const cal=document.getElementById('plan-cal');cal.style.display='block';
+      cal.innerHTML=`<a class="btn sec" href="${makeICS(invNo,t)}" download="Payment_${invNo}.ics" style="display:block;text-align:center;text-decoration:none">📅 Add payment reminder (${t.due}) to calendar</a>`;
+    }
+    setTimeout(()=>{btn.className='btn pri';btn.textContent='✓ Complete sale & log';cart=[];document.getElementById('cart-wrap').style.display='none';},6000);
+  }catch(e){btn.className='btn err';btn.textContent='Failed';st.textContent='Error: '+e.message;setTimeout(()=>{btn.className='btn pri';btn.textContent='✓ Complete sale & log';},4000);}
+}
+
+// ── PRINT TAGS ───────────────────────────────────
+function printFromQueue(){printSel=[...queue];renderPrintSel();}
+function printSearchShow(){document.getElementById('print-search-wrap').style.display='block';}
+function onPrintSearch(){const q=gv('print-search').trim();clearTimeout(printSearchT);if(q.length<2)return;printSearchT=setTimeout(()=>doPrintSearch(q),600);}
+async function doPrintSearch(q){
+  const res=document.getElementById('print-search-res');res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Searching...</p>';
+  try{
+    const coins=await sheetsSearch(q);
+    res.innerHTML=coins.map(c=>`<div class="cc" onclick='addToPrint(${JSON.stringify(c).replace(/'/g,"&apos;")})'>
+      <div class="cc-sku">${c.sku||'—'}</div><div class="cc-name">${c.name||'Unknown'}</div>
+      <div class="cc-meta">${[c.country,c.denomination].filter(Boolean).join(' · ')}</div>
+    </div>`).join('');
+  }catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Error: '+e.message+'</p>';}
+}
+function addToPrint(coin){if(!printSel.find(c=>c.sku===coin.sku||c.publicSKU===coin.public_sku))printSel.push(coin);renderPrintSel();}
+function removeFromPrint(i){printSel.splice(i,1);renderPrintSel();}
+function renderPrintSel(){
+  const list=document.getElementById('print-selected');const actions=document.getElementById('print-actions');
+  if(!printSel.length){list.innerHTML='';actions.style.display='none';return;}
+  list.innerHTML='<p class="lbl">Selected ('+printSel.length+')</p>'+printSel.map((c,i)=>`<div class="qi"><div class="qi-info"><div class="qi-sku">${c.publicSKU||c.sku||''}</div><div class="qi-name">${c.name||'Unknown'}</div></div><button class="qi-del" onclick="removeFromPrint(${i})">×</button></div>`).join('');
+  actions.style.display='block';
+  loadTagSizeInputs();
+  renderTagPreview();
+}
+
+// ── TAG SIZING ───────────────────────────────────
+const TAG_DEFAULT={w:1.75,h:1.75,f:6.5,cols:2};
+const TAG_PRESETS={s:{w:2,h:2,f:7.5,cols:1},m:{w:1.75,h:1.75,f:6.5,cols:2},l:{w:2.5,h:2.5,f:9,cols:1}};
+const PAGE_USABLE_W=7.6; // letter portrait, inside @page + body padding
+function tagSize(){
+  try{const s=JSON.parse(localStorage.getItem('hh_tagsize'));if(s&&s.w)return s;}catch(e){}
+  return{...TAG_DEFAULT};
+}
+function saveTagSize(s){localStorage.setItem('hh_tagsize',JSON.stringify(s));}
+function loadTagSizeInputs(){
+  const s=tagSize();
+  sv('ts-w',s.w);sv('ts-h',s.h);sv('ts-f',s.f);sv('ts-cols',s.cols);
+}
+function tagPreset(k){const p=TAG_PRESETS[k];if(!p)return;saveTagSize({...p});loadTagSizeInputs();renderTagPreview();}
+function onTagSize(){
+  const s={w:parseFloat(gv('ts-w'))||TAG_DEFAULT.w,h:parseFloat(gv('ts-h'))||TAG_DEFAULT.h,f:parseFloat(gv('ts-f'))||TAG_DEFAULT.f,cols:Math.max(1,Math.min(8,parseInt(gv('ts-cols'))||TAG_DEFAULT.cols))};
+  saveTagSize(s);renderTagPreview();
+}
+function renderTagPreview(){
+  const s=tagSize();
+  const note=document.getElementById('ts-note');
+  const pairW=s.w*2, used=pairW*s.cols, maxCols=Math.max(1,Math.floor(PAGE_USABLE_W/pairW));
+  if(note){
+    if(used>PAGE_USABLE_W+0.01){
+      note.innerHTML=`⚠ ${s.cols} tags across needs ${used.toFixed(1)} in but the page fits ~${PAGE_USABLE_W} in. Reduce to <b>${maxCols}</b> column${maxCols!==1?'s':''} or a smaller width, or tags will be cut off.`;
+      note.style.color='var(--danger-txt)';
+    }else{
+      const cells=s.cols*2;
+      note.innerHTML=`Each row prints <b>${s.cols}</b> tag${s.cols!==1?'s':''} = ${cells} cells: ${Array(s.cols).fill('info│logo').join(' │ ')}. Tag ${s.w}×${s.h} in, ${s.f}pt (max ${maxCols} across at this width).`;
+      note.style.color='var(--txt3)';
+    }
+  }
+  document.getElementById('tag-preview').innerHTML=printSel.map(c=>buildTagHTML(c,s)).join('');
+  // After layout, shrink any overflowing attribution text to fit its frame.
+  requestAnimationFrame(()=>document.querySelectorAll('#tag-preview .tag-txt').forEach(fitText));
+}
+function capDenom(d){d=(d||'').trim();return d?d.charAt(0).toUpperCase()+d.slice(1):'';}
+// Standard numismatic metal abbreviations: AV gold, AR silver, Æ all copper-alloys.
+function normMetal(m){
+  if(!m)return'';
+  const s=m.toString().trim().toLowerCase();
+  if(/^(av|gold|au|aureus)/.test(s)||s.includes('gold'))return'AV';
+  if(/^(ar|silver|ag)/.test(s)||s.includes('silver'))return'AR';
+  if(/^(ae|æ|brass|copper|orichalcum|bronze|billon|bi|cu|bell metal|potin|lead|pb)/.test(s)||s.includes('brass')||s.includes('copper')||s.includes('orichalcum')||s.includes('bronze')||s.includes('billon'))return'Æ';
+  if(s==='electrum'||s==='el')return'EL';   // electrum keeps its own abbreviation
+  return m;   // unknown — leave as the user entered it
+}
+// Builds the attribution-side inner HTML. Order: header, metal·denom·size, mint,
+// Obv, Rev, Provenance (above Ref), Ref, surfaces (small grey), story.
+function fmtCoinDate(year,adbc){
+  if(!year)return'';
+  year=String(year).replace(/\b(ca\.?|circa|c\.|approx\.?)\s*/gi,'').replace(/\s*-\s*/g,'\u2013').trim();
+  const era=(adbc||'').toUpperCase().trim();
+  if(era==='AD')return 'AD '+year;
+  if(era==='BC')return year+' BC';
+  return year;
+}
+function tagInfoHTML(c){
+  const mint=c.mint||c.mintLocation||'';const adbc=c.adbc||'';const year=c.year||'';
+  const mintLine=[mint,fmtCoinDate(year,adbc)].filter(Boolean).join(', ');
+  const reignClean=(c.reign||'').replace(/\b(ca\.?|circa|c\.|approx\.?)\s*/gi,'').trim();
+  const line2=[normMetal(c.metal||c.metalType||''),capDenom(c.denom||c.denomination||''),c.mmgm||''].filter(Boolean).join(' · ');
+  return`<div style="font-weight:700">${c.country||''}</div>`+
+    `<div style="font-weight:700">${c.name||''}${reignClean?' ('+reignClean+')':''}</div>`+
+    (line2?`<div>${line2}</div>`:'')+
+    (mintLine?`<div>${mintLine}</div>`:'')+
+    (c.obverse?`<div><b>Obv:</b> ${c.obverse}</div>`:'')+
+    (c.reverse?`<div><b>Rev:</b> ${c.reverse}</div>`:'')+
+    (c.provenance?`<div style="margin-top:1px"><b>Prov:</b> ${c.provenance}</div>`:'')+
+    (c.refs?`<div><b>Ref:</b> ${c.refs}</div>`:'')+
+    (c.condition?`<div class="tag-surfaces" style="color:#888;font-style:italic">${c.condition}</div>`:'')+
+    (c.story?`<div style="margin-top:3px;border-top:.5px solid #444;padding-top:3px">${c.story}</div>`:'');
+}
+// Builds the back/logo side:
+//  big logo (bleeds off right edge) → spacer → name / title (stacked) → phone · email →
+//  bottom row: [ SKU / cipher left ] [ price + "guaranteed" right ]
+function tagBackHTML(c,fs){
+  const pub=c.publicSKU||c.sku||'';const price=c.price?'$'+c.price:'';
+  const cc=costCipher(c.cost||c.price_purchased||'');
+  const logo=getLogo()
+    ?`<div style="display:flex;justify-content:flex-end;width:100%;margin-right:-7px"><img src="${getLogo()}" alt="Handheld History" style="max-width:84%;max-height:94px;width:auto;height:auto;object-fit:contain"/></div>`
+    :'';
+  return logo+
+    `<div style="flex:1;min-height:0"></div>`+
+    `<div style="text-align:center;width:100%">`+
+      `<div style="font-size:${fs.sku}pt;font-weight:700;color:#1a1a18;line-height:1.1">Leo Greenberry</div>`+
+      `<div style="font-size:${fs.gtee}pt;color:#333;letter-spacing:.3px">Numismatic Curator</div>`+
+      `<div style="font-size:${fs.gtee}pt;color:#444;margin-top:1px">(301)-542-4840 &middot; greeleo@gmail.com</div>`+
+    `</div>`+
+    `<div style="height:3px"></div>`+
+    `<div style="display:flex;align-items:flex-end;justify-content:space-between;width:100%;gap:4px">`+
+      `<div style="text-align:left"><div style="font-size:${fs.sku}pt;font-weight:700;color:#1a1a18">${pub}</div>${cc?`<div style="font-size:${fs.gtee}pt;color:#999;font-family:monospace">${cc}</div>`:''}</div>`+
+      `<div style="text-align:right"><div style="font-size:${fs.sku}pt;font-weight:700;color:#1a1a18">${price}</div><div style="font-size:${fs.gtee}pt;color:#999;font-style:italic">All coins guaranteed for life.</div></div>`+
+    `</div>`;
+}
+// Shrinks an element's font until its content fits its fixed height (auto-scale).
+function fitText(el){
+  if(!el)return;
+  let pt=parseFloat(el.dataset.basept||el.style.fontSize)||8;
+  el.style.fontSize=pt+'pt';
+  let guard=0;
+  while(el.scrollHeight>el.clientHeight&&pt>3&&guard<60){pt-=0.3;el.style.fontSize=pt.toFixed(2)+'pt';guard++;}
+}
+function buildTagHTML(c,s){
+  s=s||tagSize();
+  const f=s.f;
+  const fs={sku:(f*1.05).toFixed(1),pr:(f*1.55).toFixed(1),ph:(f*0.95).toFixed(1),gtee:(f*0.85).toFixed(1),prov:(f*0.78).toFixed(1)};
+  return`<div class="tag-pair" style="width:${(s.w*2)}in;height:${s.h}in;display:grid;grid-template-columns:1fr 1fr;margin:0 auto 8px">
+    <div class="tag-txt" data-basept="${f}" style="font-size:${f}pt;line-height:1.3;overflow:hidden">${tagInfoHTML(c)}</div>
+    <div class="tag-logo">${tagBackHTML(c,fs)}</div>
+  </div>`;
+}
+function doPrint(){
+  if(!printSel.length)return;
+  const s=tagSize();const f=s.f;
+  const fs={sku:(f*1.05).toFixed(1),pr:(f*1.55).toFixed(1),ph:(f*0.95).toFixed(1),gtee:(f*0.85).toFixed(1),prov:(f*0.78).toFixed(1)};
+  const area=document.getElementById('print-area');
+  // Each tag = text half + logo half, both s.w wide; s.cols tags across the page.
+  area.style.gridTemplateColumns=`repeat(${s.cols}, ${s.w}in ${s.w}in)`;
+  area.innerHTML=printSel.map(c=>buildPrintPair(c,s,fs)).join('');
+  // The print area is hidden (display:none) so it can't be measured; reveal it
+  // off-screen, shrink overflowing text to fit, then print.
+  area.style.position='fixed';area.style.left='-9999px';area.style.top='0';area.style.display='grid';
+  requestAnimationFrame(()=>{
+    area.querySelectorAll('.pa-txt').forEach(fitText);
+    area.style.position='';area.style.left='';area.style.top='';area.style.display='';
+    window.print();
+  });
+}
+function buildPrintPair(c,s,fs){
+  const wh=`width:${s.w}in;height:${s.h}in`;
+  const pub=c.publicSKU||c.sku||'';const price=c.price?'$'+c.price:'';
+  const cc=costCipher(c.cost||c.price_purchased||'');
+  const logoMaxH=(s.h*0.56).toFixed(2);
+  const logo=getLogo()?`<div style="display:flex;justify-content:flex-end;width:100%;margin-right:-0.08in"><img src="${getLogo()}" alt="HH" style="max-width:84%;max-height:${logoMaxH}in;width:auto;height:auto;object-fit:contain"/></div>`:'';
+  const backInner=
+    logo+
+    `<div style="flex:1;min-height:0"></div>`+
+    `<div style="text-align:center;width:100%">`+
+      `<div style="font-size:${fs.sku}pt;font-weight:700;color:#1a1a18;line-height:1.1">Leo Greenberry</div>`+
+      `<div style="font-size:${fs.gtee}pt;color:#333;letter-spacing:.3px">Numismatic Curator</div>`+
+      `<div style="font-size:${fs.gtee}pt;color:#444;margin-top:1px">(301)-542-4840 &middot; greeleo@gmail.com</div>`+
+    `</div>`+
+    `<div style="height:0.03in"></div>`+
+    `<div style="display:flex;align-items:flex-end;justify-content:space-between;width:100%;gap:4px">`+
+      `<div style="text-align:left"><div style="font-size:${fs.sku}pt;font-weight:700;color:#1a1a18">${pub}</div>${cc?`<div style="font-size:${fs.gtee}pt;color:#999;font-family:monospace">${cc}</div>`:''}</div>`+
+      `<div style="text-align:right"><div style="font-size:${fs.sku}pt;font-weight:700;color:#1a1a18">${price}</div><div style="font-size:${fs.gtee}pt;color:#999;font-style:italic">All coins guaranteed for life.</div></div>`+
+    `</div>`;
+  return`<div class="pa-txt" data-basept="${s.f}" style="${wh};font-size:${s.f}pt">${tagInfoHTML(c)}</div>`+
+    `<div class="pa-logo" style="${wh}">${backInner}</div>`;
+}
+
+// ── WHATNOT ──────────────────────────────────────
+function wnFromQueue(){wnSel=[...queue];renderWN();}
+function wnSearchShow(){document.getElementById('wn-search-wrap').style.display='block';}
+function onWnSearch(){const q=gv('wn-search').trim();clearTimeout(wnSearchT);if(q.length<2)return;wnSearchT=setTimeout(()=>doWNSearch(q),600);}
+async function doWNSearch(q){
+  const res=document.getElementById('wn-search-res');res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Searching...</p>';
+  try{const coins=await sheetsSearch(q);res.innerHTML=coins.map(c=>`<div class="cc" onclick='addToWN(${JSON.stringify(c).replace(/'/g,"&apos;")})' data-sku="${c.sku}"><div class="cc-sku">${c.sku||'—'}</div><div class="cc-name">${c.name||'Unknown'}</div><div class="cc-meta">${[c.country,c.denomination].filter(Boolean).join(' · ')}</div></div>`).join('');}
+  catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Error: '+e.message+'</p>';}
+}
+function addToWN(coin){if(!wnSel.find(c=>c.sku===coin.sku))wnSel.push(coin);renderWN();}
+function removeFromWN(i){wnSel.splice(i,1);renderWN();}
+function renderWN(){
+  const list=document.getElementById('wn-list');const actions=document.getElementById('wn-actions');
+  if(!wnSel.length){list.innerHTML='';actions.style.display='none';return;}
+  actions.style.display='block';
+  list.innerHTML=wnSel.map((c,i)=>{const retail=parseFloat(c.price)||0;const wp=retail>0?Math.round(retail*1.10):0;return`<div class="wn-row"><div class="wn-info"><div class="wn-sku">${c.publicSKU||c.sku||''}</div><div class="wn-name">${c.name||'Unknown'}</div><div class="wn-price">${wp?'Whatnot: $'+wp:'No retail price'}</div></div><button class="qi-del" onclick="removeFromWN(${i})">×</button></div>`;}).join('');
+}
+function buildWNTitle(c){return[c.name||c.country||'Ancient Coin',c.denom||c.denomination,normMetal(c.metal),c.reign,c.grade].filter(Boolean).join(' ').slice(0,80);}
+function buildWNDesc(c){const parts=[];if(c.country)parts.push(c.country+'.');if(c.name&&c.reign)parts.push(c.name+' ('+c.reign+').');if(c.metal&&(c.denom||c.denomination))parts.push(normMetal(c.metal)+' '+(c.denom||c.denomination)+(c.mmgm?' ('+c.mmgm+')':'')+'.');if(c.mint)parts.push('Mint: '+c.mint+'.');if(c.obverse)parts.push('Obv: '+c.obverse);if(c.reverse)parts.push('Rev: '+c.reverse);if(c.refs)parts.push('Ref: '+c.refs);if(c.condition)parts.push(c.condition);if(c.provenance)parts.push(c.provenance);if(c.story)parts.push(c.story);parts.push('All coins guaranteed for life. (301) 542-4840');return parts.join(' ');}
+function dlWN(){
+  const headers=['Category','Sub Category','Title','Description','Quantity','Type','Price','Shipping Profile','Attribute: Product Type','Offerable','Condition','Cost Per Item','SKU'];
+  const rows=wnSel.map(c=>{const retail=parseFloat(c.price)||0;const wp=retail>0?Math.round(retail*1.10).toFixed(2):'';return['Coins & Paper Money','Ancient Coins',csvEsc(buildWNTitle(c)),csvEsc(buildWNDesc(c)),'1','Auction',wp,'1-3 Oz','Ancient Coins','Yes',gradeToWN(c.grade||''),c.cost||'',c.publicSKU||c.sku||''];});
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='handheld_history_whatnot_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
+}
+function exportWN(){wnSel=[...queue];go('whatnot');renderWN();}
+
+// ── LOCATE / PULL ────────────────────────────────
+let locSearchT=null;
+const STATUSES=['PENDING','NEW','BASIC','COMPLETE','TAGGED','LISTED','SOLD','LOST','VOID'];
+function onLocSearch(){
+  const q=gv('loc-search').trim();clearTimeout(locSearchT);
+  const res=document.getElementById('loc-results');
+  if(q.length<2){res.innerHTML='';return;}
+  locSearchT=setTimeout(()=>doLocSearch(q),500);
+}
+async function doLocSearch(q){
+  const res=document.getElementById('loc-results');
+  res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Searching...</p>';
+  try{
+    const coins=await sheetsSearch(q);
+    if(!coins.length){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">No coins found.</p>';return;}
+    res.innerHTML=coins.map(c=>locCard(c)).join('');
+  }catch(e){res.innerHTML='<p style="font-size:13px;color:var(--txt3);margin-top:8px">Error: '+e.message+'</p>';}
+}
+function locCard(c){
+  const where=c.location?`<span class="big">${c.location}</span>`:'<span style="color:var(--txt3);font-size:13px">no tray set</span>';
+  const opts=STATUSES.map(s=>`<option value="${s}"${(c.status||'NEW')===s?' selected':''}>${s}</option>`).join('');
+  return`<div class="loc-card" id="loc-${c.row_number}">
+    <div class="qi-sku">${c.sku||''}${c.public_sku?' · '+c.public_sku:''}</div>
+    <div class="qi-name" style="white-space:normal">${c.name||'Unknown'}${c.reign?' ('+c.reign+')':''}</div>
+    <div class="qi-meta">${[c.country,c.metal,c.denomination].filter(Boolean).join(' · ')}</div>
+    <div class="loc-where">📍 ${where}</div>
+    <div class="loc-row">
+      <input type="text" id="locin-${c.row_number}" placeholder="Move to… e.g. A-014-C3" value="${(c.location||'').replace(/"/g,'&quot;')}"/>
+      <button class="sm pri" onclick="updateLocation(${c.row_number})">Save tray</button>
+    </div>
+    <div class="loc-row">
+      <select id="stin-${c.row_number}" onchange="updateStatus(${c.row_number})">${opts}</select>
+    </div>
+    <div class="loc-photos" style="margin-top:6px">
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:3px">Photos ${(c.photoObv||c.photoRev||c.photoStitch)?'<span style="color:var(--accent-txt)">✓ on file</span>':'<span style="color:var(--txt3)">none yet</span>'}</div>
+      <div class="g2">
+        <label class="sm sec" style="text-align:center;cursor:pointer">Obverse<input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhotoLater(${c.row_number},'${(c.public_sku||c.sku||'').replace(/'/g,'')}','obv',this)"/></label>
+        <label class="sm sec" style="text-align:center;cursor:pointer">Reverse<input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhotoLater(${c.row_number},'${(c.public_sku||c.sku||'').replace(/'/g,'')}','rev',this)"/></label>
+      </div>
+      <label class="sm sec" style="text-align:center;cursor:pointer;display:block;margin-top:5px">Single stitched photo<input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhotoLater(${c.row_number},'${(c.public_sku||c.sku||'').replace(/'/g,'')}','stitch',this)"/></label>
+    </div>
+    <div class="status" id="locst-${c.row_number}"></div>
+    <button class="sm" style="margin-top:6px;color:var(--danger-txt);border-color:var(--danger)" onclick="deleteCoin(${c.row_number},'${(c.public_sku||c.sku||'').replace(/'/g,'')}')">🗑 Delete row (junk only)</button>
+  </div>`;
+}
+// Upload a photo to an already-saved coin and write its URL to the row.
+async function addPhotoLater(row,sku,side,input){
+  const file=input.files[0];if(!file)return;
+  const st=document.getElementById('locst-'+row);st.textContent='Uploading '+side+'…';
+  try{
+    const dataUrl=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file);});
+    const b64=dataUrl.split(',')[1];const mime=(dataUrl.match(/data:(.*?);/)||[])[1]||'image/jpeg';
+    const up=await callScript('photo',{sku,side,data:b64,mime});
+    if(!up||!up.url)throw new Error('upload failed');
+    // write URL into the right column: AF obv / AG rev / AH stitch
+    const col=side==='obv'?'AF':(side==='rev'?'AG':'AH');
+    await sheetsUpdate(row,col,[up.url]);
+    st.textContent='✓ '+side+' photo saved to coin.';
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+async function deleteCoin(row,sku){
+  if(!confirm('Delete '+sku+' permanently? This erases the row.\n\nUse this ONLY for junk/test rows. For real coins that fell through or were lost, set status to VOID or LOST instead (keeps the record).\n\nCoins with a recorded sale cannot be deleted.'))return;
+  const st=document.getElementById('locst-'+row);st.textContent='Deleting…';
+  try{
+    const r=await callScript('deletecoin',{row});
+    if(r&&r.error){st.textContent=r.error;return;}
+    const card=document.getElementById('loc-'+row);if(card)card.style.display='none';
+    loadStats();
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+async function updateLocation(row){
+  const v=gv('locin-'+row).trim();const st=document.getElementById('locst-'+row);
+  st.textContent='Saving…';
+  try{await sheetsUpdate(row,'AI',[v]);st.textContent='✓ Tray set to '+(v||'(blank)');
+    const card=document.getElementById('loc-'+row);const big=card&&card.querySelector('.big');
+    if(big)big.textContent=v;else if(card){const w=card.querySelector('.loc-where');if(w)w.innerHTML='📍 <span class="big">'+v+'</span>';}
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+async function updateStatus(row){
+  const v=gv('stin-'+row);const st=document.getElementById('locst-'+row);
+  st.textContent='Saving…';
+  try{await sheetsUpdate(row,'AJ',[v]);st.textContent='✓ Status: '+v;loadStats();}
+  catch(e){st.textContent='Error: '+e.message;}
+}
+// ── EXPENSES ─────────────────────────────────────
+let scannedReceipt=null;   // {dataUrl} held from a scan, reused as the receipt on Save
+function onExpCat(){
+  const c=gv('exp-category');
+  document.getElementById('exp-event-wrap').style.display=(c==='Show')?'block':'none';
+  document.getElementById('exp-miles-wrap').style.display=(c==='Mileage')?'block':'none';
+}
+// Photograph a receipt → AI extracts amount/date/vendor → fills the form for review.
+async function scanReceipt(input){
+  const file=input.files[0];if(!file)return;
+  const st=document.getElementById('exp-scan-st');
+  if(!getKey()){st.textContent='No API key — go to Settings first.';return;}
+  st.textContent='Reading receipt...';
+  try{
+    const dataUrl=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file);});
+    scannedReceipt={dataUrl};                       // keep it for upload on Save
+    const b64=dataUrl.split(',')[1];
+    let mime=(dataUrl.match(/data:(.*?);/)||[])[1]||'image/jpeg';
+    if(mime.includes('heic')||mime.includes('heif'))mime='image/jpeg';
+    const cats=['Show','Whatnot/Promo','Outbound Shipping','Supplies','Fees','Tools/Subscriptions','Mileage','Professional','Travel','Other'];
+    const body={model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+      {type:'text',text:`This is a receipt. Extract its details and return ONLY a JSON object, no markdown:
+{"amount":"total paid, number only e.g. 24.50","date":"YYYY-MM-DD if shown else \\"\\"","vendor":"merchant/store name","category":"best guess from this list: ${cats.join(', ')}"}
+
+Rules:
+- amount = the FINAL total actually paid (after tax), number only.
+- date = the transaction date in YYYY-MM-DD; if not visible, "".
+- vendor = the business name printed on the receipt.
+- category = your best single guess from the list based on the merchant (e.g. USPS→Outbound Shipping, Staples→Supplies, a hotel/airline→Travel). If unsure, "Other".`}]}]};
+    const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message||'API error');
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const p=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    if(p.amount)sv('exp-amount',String(p.amount).replace(/[^0-9.]/g,''));
+    if(p.date)sv('exp-date',p.date);
+    if(p.vendor)sv('exp-note',p.vendor);
+    if(p.category){const sel=document.getElementById('exp-category');if([...sel.options].some(o=>o.value===p.category)){sel.value=p.category;onExpCat();}}
+    st.textContent='✓ Filled from receipt — check the category and amount, then Save.';
+  }catch(e){st.textContent='Could not read receipt: '+e.message+'. Enter it manually.';}
+}
+// Stamp date/category/amount onto a receipt image, return base64 + mime.
+function stampReceipt(dataUrl,lines){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
+      const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
+      const pad=Math.round(img.width*0.02);
+      const fs=Math.max(16,Math.round(img.width*0.030));
+      ctx.font='bold '+fs+'px Arial';
+      const txt=lines.filter(Boolean);
+      const boxH=fs*txt.length+pad*2;
+      const boxW=Math.max.apply(null,txt.map(t=>ctx.measureText(t).width))+pad*2;
+      ctx.fillStyle='rgba(0,0,0,0.62)';ctx.fillRect(0,img.height-boxH,boxW,boxH);
+      ctx.fillStyle='#fff';ctx.textBaseline='top';
+      txt.forEach((t,i)=>ctx.fillText(t,pad,img.height-boxH+pad+i*fs));
+      resolve(cv.toDataURL('image/jpeg',0.85).split(',')[1]);
+    };
+    img.src=dataUrl;
+  });
+}
+async function logExpense(){
+  const st=document.getElementById('exp-st');const btn=document.getElementById('exp-btn');
+  const amount=gv('exp-amount');const cat=gv('exp-category');
+  if(!amount){st.textContent='Enter an amount.';return;}
+  if(!getScriptUrl()){st.textContent='Connect your sheet in Settings first.';return;}
+  btn.className='btn dim';btn.textContent='Saving...';st.textContent='';
+  const date=gv('exp-date')||new Date().toISOString().split('T')[0];
+  const event=gv('exp-event');const note=gv('exp-note');const miles=gv('exp-miles');
+  try{
+    let receipt='',fname='';
+    const file=document.getElementById('exp-receipt').files[0];
+    let dataUrl='';
+    if(file){dataUrl=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file);});}
+    else if(scannedReceipt){dataUrl=scannedReceipt.dataUrl;}    // reuse the scanned photo
+    if(dataUrl){
+      const stampLines=[date+'  ·  '+cat,(event||note||''),'$'+amount];
+      receipt=await stampReceipt(dataUrl,stampLines);
+      const tag=(event||note||cat).replace(/[^A-Za-z0-9]/g,'').slice(0,20);
+      fname='EXP_'+date.replace(/-/g,'')+'_'+cat.replace(/[^A-Za-z0-9]/g,'')+'_'+tag+'_$'+amount+'.jpg';
+    }
+    await callScript('logexpense',{date,category:cat,amount:'$'+amount,event,note,miles,receipt,fname,mime:'image/jpeg'});
+    btn.className='btn ok';btn.textContent='✓ Saved';st.textContent='Expense logged'+(receipt?' with receipt in Drive.':'.');
+    ['exp-amount','exp-event','exp-note','exp-miles'].forEach(id=>sv(id,''));
+    document.getElementById('exp-receipt').value='';document.getElementById('exp-receipt-prev').innerHTML='';
+    scannedReceipt=null;const ss=document.getElementById('exp-scan-st');if(ss)ss.textContent='';
+    setTimeout(()=>{btn.className='btn pri';btn.textContent='✓ Save expense';},2500);
+  }catch(e){btn.className='btn err';btn.textContent='Failed';st.textContent='Error: '+e.message;setTimeout(()=>{btn.className='btn pri';btn.textContent='✓ Save expense';},3500);}
+}
+
+// ── DASHBOARD ────────────────────────────────────
+function dMoney(n){return '$'+(Math.round((n||0)*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+async function buildBookkeeper(){
+  const st=document.getElementById('bk-st');
+  if(!getScriptUrl()){st.textContent='Connect your sheet in Settings first.';return;}
+  const start=gv('bk-start'),end=gv('bk-end');
+  st.textContent='Building export tabs...';
+  try{
+    const r=await callScript('bookkeeper',{start,end});
+    st.textContent='✓ Done — '+r.transactions+' transactions for '+r.period+'. Open the "QB Transactions" and "QB Summary" tabs in your sheet.';
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+// Offline show catalog: searchable PDF, photos embedded, full details, 2 coins/page.
+function sortCatalog(coins,mode){
+  const priceNum=c=>parseFloat(String(c.price||'').replace(/[^0-9.]/g,''))||0;
+  const metalRank=c=>{const m=normMetal(c.metal||c.metalType||'');return m==='AV'?0:(m==='AR'?1:(m==='EL'?2:(m==='Æ'?3:4)));};
+  const region=c=>(c.country||'zzz').toLowerCase();
+  const ruler=c=>(c.name||'zzz').toLowerCase();
+  const cmp=(a,b)=>a<b?-1:(a>b?1:0);
+  if(mode==='price-hi')coins.sort((a,b)=>priceNum(b)-priceNum(a));
+  else if(mode==='price-lo')coins.sort((a,b)=>priceNum(a)-priceNum(b));
+  else if(mode==='metal')coins.sort((a,b)=>metalRank(a)-metalRank(b)||cmp(region(a),region(b))||cmp(ruler(a),ruler(b)));
+  else if(mode==='ruler')coins.sort((a,b)=>cmp(ruler(a),ruler(b)));
+  else if(mode==='sku')coins.sort((a,b)=>cmp((a.public_sku||a.sku||''),(b.public_sku||b.sku||'')));
+  else coins.sort((a,b)=>cmp(region(a),region(b))||cmp(ruler(a),ruler(b))||priceNum(b)-priceNum(a)); // region default
+}
+async function buildCatalog(){
+  const st=document.getElementById('cat-st');
+  if(!getScriptUrl()){st.textContent='Connect your sheet in Settings first.';return;}
+  const f=gv('cat-filter');
+  const map={SELLABLE:'NEW,BASIC,COMPLETE,TAGGED,LISTED',ALL:'',COMPLETE:'COMPLETE',TAGGED:'TAGGED',LISTED:'LISTED',NEW:'NEW'};
+  const statuses=map[f]!==undefined?map[f]:'';
+  st.textContent='Pulling inventory...';
+  try{
+    const d=await callScript('catalog',{statuses});
+    const coins=d.results||[];
+    if(!coins.length){st.textContent='No coins match that filter.';return;}
+    sortCatalog(coins,gv('cat-sort'));
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'letter'});
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight();
+    const M=40;const cardH=(H-M*2-20)/2;            // two cards per page
+    // cover
+    doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(20);
+    doc.text('Handheld History',M,M+10);
+    doc.setFont('helvetica','normal');doc.setFontSize(12);doc.setTextColor(90);
+    doc.text('Inventory catalog — '+coins.length+' coins — '+new Date().toISOString().split('T')[0],M,M+30);
+    doc.setFontSize(9);doc.text('Prices and availability current as of generation. Searchable: use your PDF reader\u2019s find.',M,M+46);
+    let idx=0;
+    for(let i=0;i<coins.length;i++){
+      const c=coins[i];
+      const slot=idx%2;
+      if(idx>0&&slot===0)doc.addPage();
+      // first card on page 1 sits below the cover header; otherwise top margin
+      const cy=(slot===0)?(idx===0?M+70:M):(M+cardH+20);
+      await drawCatalogCard(doc,c,M,cy,W-M*2,cardH-10);
+      idx++;
+    }
+    st.textContent='Rendering PDF...';
+    doc.save('HandheldHistory_Catalog_'+new Date().toISOString().split('T')[0]+'.pdf');
+    st.textContent='✓ Catalog saved ('+coins.length+' coins). Open it once on your phone so it\u2019s cached offline.';
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+async function drawCatalogCard(doc,c,x,y,w,h){
+  doc.setDrawColor(210);doc.setLineWidth(0.5);doc.rect(x,y,w,h);
+  const pad=12;let tx=x+pad;
+  // photos on the left
+  let photoData=[];
+  if(c.photoStitch){const d=await imgToData(c.photoStitch);if(d)photoData=[d];}
+  else{const o=await imgToData(c.photoObv),r=await imgToData(c.photoRev);photoData=[o,r].filter(Boolean);}
+  const photoW=150;
+  let py=y+pad;
+  if(photoData.length){
+    const ph=Math.min(70,(h-pad*2)/photoData.length-4);
+    photoData.forEach(d=>{try{doc.addImage(d,'JPEG',x+pad,py,photoW,ph,undefined,'FAST');}catch(e){}py+=ph+4;});
+    tx=x+pad+photoW+12;
+  }
+  const txtW=x+w-pad-tx;
+  let ty=y+pad+4;
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(20);
+  const title=[c.country,c.name].filter(Boolean).join(' — ')||c.name||'Ancient coin';
+  const tlines=doc.splitTextToSize(title,txtW);doc.text(tlines,tx,ty);ty+=tlines.length*14;
+  // price + SKU prominent
+  doc.setFontSize(13);doc.setTextColor(20);
+  doc.text((c.price?'$'+c.price:'—')+'   ',tx,ty+2);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(120);
+  doc.text((c.public_sku||c.sku||''),tx+70,ty+2);ty+=16;
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(60);
+  const dateStr=fmtCoinDate(c.year,c.adbc);
+  const rows=[
+    [normMetal(c.metal||c.metalType),capDenom(c.denom||c.denomination),c.mmgm].filter(Boolean).join(' · '),
+    [c.mint||c.mintLocation,dateStr].filter(Boolean).join(', '),
+    c.obverse?('Obv: '+c.obverse):'',
+    c.reverse?('Rev: '+c.reverse):'',
+    c.refs?('Ref: '+c.refs):'',
+    c.condition?('Cond: '+c.condition):'',
+    c.provenance?('Prov: '+c.provenance):''
+  ].filter(Boolean);
+  const maxY=y+h-pad;
+  rows.forEach(line=>{
+    if(ty>maxY)return;
+    const wrapped=doc.splitTextToSize(line,txtW);
+    wrapped.forEach(wl=>{if(ty<=maxY){doc.text(wl,tx,ty);ty+=10;}});
+  });
+}
+async function loadDashboard(){
+  const box=document.getElementById('dash-body');
+  if(!getScriptUrl()){box.innerHTML='<p style="font-size:13px;color:var(--txt3)">Connect your sheet in Settings to see the dashboard.</p>';return;}
+  box.innerHTML='<p style="font-size:13px;color:var(--txt3)">Crunching your numbers...</p>';
+  try{
+    const d=await callScript('dashboard',{});
+    const card=(label,val,sub,color)=>`<div class="loc-card" style="margin-top:0"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">${label}</div><div style="font-size:22px;font-weight:700;color:${color||'var(--txt)'}">${val}</div>${sub?`<div style="font-size:12px;color:var(--txt3)">${sub}</div>`:''}</div>`;
+    let h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=card('Net profit',dMoney(d.net),'realized gain − expenses',d.net>=0?'var(--accent-txt)':'var(--danger-txt)');
+    h+=card('Realized gain',dMoney(d.sold.gain),d.sold.count+' coins sold');
+    h+=card('Inventory cost on hand',dMoney(d.onHand.cost),d.onHand.count+' unsold coins');
+    if(d.inbound&&d.inbound.count)h+=card('Dollars inbound',dMoney(d.inbound.cost),d.inbound.count+' coins in transit','#c89b3c');
+    if(d.lost&&d.lost.count)h+=card('Lost / written off',dMoney(d.lost.cost),d.lost.count+' coins','var(--danger-txt)');
+    h+=card('Inventory retail value',dMoney(d.onHand.retail),'potential at list price');
+    h+=card('Revenue',dMoney(d.sold.revenue),'total sales');
+    h+=card('Expenses',dMoney(d.expenses.total),'all operating costs');
+    h+=card('Avg margin',d.avgMargin+'%','on owned coins');
+    h+=card('Avg days to sell',d.avgDaysToSell+' days','turnover speed');
+    h+='</div>';
+
+    // status funnel
+    h+='<p class="lbl">Attribution pipeline</p><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    ['PENDING','NEW','BASIC','COMPLETE','TAGGED','LISTED','SOLD','LOST','VOID'].forEach(s=>{if((s==='LOST'||s==='VOID')&&!(d.statusCounts[s]))return;h+=`<span class="schip st-${s}">${s} <b>${d.statusCounts[s]||0}</b></span>`;});
+    h+='</div>';
+
+    // by venue
+    if(d.byVenue.length){
+      h+='<p class="lbl">Sales by venue</p><div style="font-size:13px;line-height:1.8">';
+      d.byVenue.sort((a,b)=>b.gain-a.gain).forEach(v=>{h+=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0"><span>${v.venue} <span style="color:var(--txt3)">(${v.count})</span></span><span>${dMoney(v.gain)} gain</span></div>`;});
+      h+='</div>';
+    }
+    // expenses by category
+    const cats=Object.keys(d.expenses.byCategory||{});
+    if(cats.length){
+      h+='<p class="lbl">Expenses by category</p><div style="font-size:13px;line-height:1.8">';
+      cats.sort((a,b)=>d.expenses.byCategory[b]-d.expenses.byCategory[a]).forEach(c=>{h+=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0"><span>${c}</span><span>${dMoney(d.expenses.byCategory[c])}</span></div>`;});
+      h+='</div>';
+    }
+    // per-show
+    const evts=Object.keys(d.expenses.byEvent||{});
+    if(evts.length){
+      h+='<p class="lbl">Expenses by show/event</p><div style="font-size:13px;line-height:1.8">';
+      evts.forEach(e=>{h+=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0"><span>${e}</span><span>${dMoney(d.expenses.byEvent[e])}</span></div>`;});
+      h+='</div>';
+    }
+    // monthly
+    if(d.byMonth.length){
+      h+='<p class="lbl">Monthly gain</p><div style="font-size:13px;line-height:1.8">';
+      d.byMonth.slice(-6).forEach(m=>{h+=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0"><span>${m.month}</span><span>${dMoney(m.gain)} gain · ${dMoney(m.revenue)} rev</span></div>`;});
+      h+='</div>';
+    }
+    box.innerHTML=h;
+  }catch(e){box.innerHTML='<p style="font-size:13px;color:var(--danger-txt)">Error: '+e.message+'</p>';}
+}
+
+async function loadConsignors(){
+  const box=document.getElementById('consignor-summary');
+  if(!getScriptUrl()){box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Connect your sheet first.</p>';return;}
+  box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Loading...</p>';
+  try{
+    const d=await callScript('consignors',{});
+    const list=d.consignors||[];
+    if(!list.length){box.innerHTML='<p style="font-size:12px;color:var(--txt3)">No consignment payouts owed.</p>';return;}
+    list.sort((a,b)=>b.payout-a.payout);
+    box.innerHTML='<div style="font-size:12px;color:var(--txt3);margin-bottom:4px">Owed to consignors (from sold consignment coins):</div>'+
+      list.map(c=>`<div class="loc-card" style="display:flex;justify-content:space-between;align-items:center"><div><b>${c.consignor}</b><div style="font-size:12px;color:var(--txt3)">${c.count} coin(s) sold</div></div><div style="font-family:var(--mono);font-weight:700;color:var(--accent-txt)">$${c.payout.toFixed(2)}</div></div>`).join('');
+  }catch(e){box.innerHTML='<p style="font-size:12px;color:var(--danger-txt)">Error: '+e.message+'</p>';}
+}
+async function loadPlans(){
+  const box=document.getElementById('plans-summary');
+  if(!getScriptUrl()){box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Connect your sheet first.</p>';return;}
+  box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Loading...</p>';
+  try{
+    const d=await callScript('saleslist',{});
+    const rows=(d.rows||[]).filter(r=>r.plan&&String(r.plan).toLowerCase()!=='paid in full'&&String(r.status).toLowerCase()!=='paid');
+    if(!rows.length){box.innerHTML='<p style="font-size:12px;color:var(--txt3)">No active payment plans.</p>';return;}
+    // sort by due date ascending
+    rows.sort((a,b)=>String(a.due||'').localeCompare(String(b.due||'')));
+    const today=new Date().toISOString().split('T')[0];
+    box.innerHTML='<div style="font-size:12px;color:var(--txt3);margin-bottom:4px">Coins on active payment plans ('+rows.length+'):</div>'+
+      rows.map(r=>{
+        const overdue=r.due&&String(r.due)<today;
+        return `<div class="loc-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>Invoice ${r.invoice}</b> — ${r.buyer||''}<div style="font-size:12px;color:var(--txt3)">${r.plan} · total ${r.total||''}</div><div style="font-size:12px;color:${overdue?'var(--danger-txt)':'var(--txt3)'}">Balance ${r.remaining||''} due ${r.due||'—'}${overdue?' (OVERDUE)':''}</div></div><div style="font-family:var(--mono);font-weight:700;color:var(--accent-txt);flex:0 0 auto">${r.remaining||''}</div></div></div>`;
+      }).join('');
+  }catch(e){box.innerHTML='<p style="font-size:12px;color:var(--danger-txt)">Error: '+e.message+'</p>';}
+}
+async function loadInbound(){
+  const box=document.getElementById('inbound-summary');
+  if(!getScriptUrl()){box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Connect your sheet first.</p>';return;}
+  box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Loading...</p>';
+  try{
+    const coins=await sheetsSearch('PENDING');
+    const pending=(coins||[]).filter(c=>(c.status||'').toUpperCase()==='PENDING');
+    if(!pending.length){box.innerHTML='<p style="font-size:12px;color:var(--txt3)">Nothing in transit right now.</p>';return;}
+    box.innerHTML='<div style="font-size:12px;color:var(--txt3);margin-bottom:4px">In transit to you ('+pending.length+'):</div>'+
+      pending.map(c=>`<div class="loc-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>${c.public_sku||c.sku||''}</b> — ${c.name||'Unknown'}<div style="font-size:12px;color:var(--txt3)">${[c.country,c.vendor||'',c.lot?'lot '+c.lot:''].filter(Boolean).join(' · ')}</div><div style="font-size:12px;color:var(--txt3)">Cost: ${c.price_purchased||c.cost||'—'}</div></div><button class="btn sec" style="flex:0 0 auto;padding:6px 10px" onclick='markArrived(${c.row_number},"${(c.public_sku||c.sku||'').replace(/"/g,"")}")'>✓ Arrived</button></div></div>`).join('');
+  }catch(e){box.innerHTML='<p style="font-size:12px;color:var(--danger-txt)">Error: '+e.message+'</p>';}
+}
+async function markArrived(row,sku){
+  if(!confirm('Mark '+sku+' as arrived? It moves from PENDING to NEW so you can add condition and tray location.'))return;
+  try{
+    await sheetsUpdate(row,'AJ',['NEW']);   // AJ = Status
+    document.getElementById('inbound-summary').innerHTML='<p style="font-size:12px;color:var(--accent-txt)">✓ '+sku+' marked arrived (now NEW). Find it in Locate or the sheet to add condition + tray location.</p>';
+  }catch(e){alert('Error: '+e.message);}
+}
+async function loadStats(){
+  const box=document.getElementById('status-summary');if(!box)return;
+  if(!getScriptUrl()){box.innerHTML='<span style="font-size:12px;color:var(--txt3)">Connect your sheet in Settings to see status counts.</span>';return;}
+  box.innerHTML='<span style="font-size:12px;color:var(--txt3)">Loading status counts…</span>';
+  try{
+    const d=await callScript('stats',{});const c=d.counts||{};
+    box.innerHTML=STATUSES.map(s=>`<span class="schip st-${s}">${s} <b>${c[s]||0}</b></span>`).join('')+`<span class="schip">TOTAL <b>${d.total||0}</b></span>`;
+  }catch(e){box.innerHTML='<span style="font-size:12px;color:var(--danger-txt)">Status counts unavailable: '+e.message+'</span>';}
+}
+
+// ── SETTINGS ─────────────────────────────────────
+function loadSettings(){
+  const k=getKey();
+  const kd=document.getElementById('key-display');if(kd)kd.value=k?k.slice(0,20)+'...':'(not set)';
+  const u=getScriptUrl();const s=getSecret();
+  const cs=document.getElementById('conn-status');
+  if(cs){cs.textContent=u?('✓ URL saved'+(s?' + secret':' — add a secret below')):'Not set — add your web app URL below';cs.style.color=u&&s?'var(--accent)':'var(--warn)';}
+  const lg=getLogo();const ls=document.getElementById('logo-status');const lp=document.getElementById('logo-prev');
+  if(ls){ls.textContent=lg?'✓ Logo set':'No logo set';ls.style.color=lg?'var(--accent)':'var(--txt2)';}
+  if(lp)lp.innerHTML=lg?`<img src="${lg}" alt="logo" style="max-height:60px;max-width:160px;background:#f5f4e8;padding:6px;border-radius:8px"/>`:'';
+  loadBiz();
+}
+function onLogoFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{localStorage.setItem('hh_logo',e.target.result);loadSettings();
+      const out=document.getElementById('test-out');out.style.display='block';out.textContent='✓ Logo saved. It will appear on printed tags.';
+    }catch(err){alert('Logo too large to store. Try a smaller image (under ~1MB).');}
+  };
+  reader.readAsDataURL(file);
+}
+function clearLogo(){localStorage.removeItem('hh_logo');loadSettings();}
+function saveBiz(){
+  const map={'biz-name':'hh_biz_name','biz-addr':'hh_biz_addr','biz-contact':'hh_biz_contact','pay-paypal':'hh_pay_paypal','pay-venmo':'hh_pay_venmo','pay-cashapp':'hh_pay_cashapp','pay-zelle':'hh_pay_zelle'};
+  Object.entries(map).forEach(([id,key])=>{const v=gv(id);if(v!==null)localStorage.setItem(key,v);});
+}
+function loadBiz(){
+  const map={'biz-name':'hh_biz_name','biz-addr':'hh_biz_addr','biz-contact':'hh_biz_contact','pay-paypal':'hh_pay_paypal','pay-venmo':'hh_pay_venmo','pay-cashapp':'hh_pay_cashapp','pay-zelle':'hh_pay_zelle'};
+  Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.value=localStorage.getItem(key)||'';});
+}
+function saveKey(){
+  const v=gv('key-input').trim();
+  if(!v){alert('Please paste your API key.');return;}
+  if(!v.startsWith('sk-ant-')){alert('Key must start with sk-ant-');return;}
+  localStorage.setItem('hh_key',v);sv('key-input','');loadSettings();
+  const out=document.getElementById('test-out');out.style.display='block';out.textContent='✓ API key saved.';
+}
+function saveConn(){
+  const u=gv('url-input').trim();const s=gv('secret-input').trim();
+  if(!u){alert('Paste your Apps Script web app URL (the /exec link).');return;}
+  if(!/^https:\/\/script\.google\.com\/.*\/exec$/.test(u)){if(!confirm('That doesn\u2019t look like a /exec URL. Save anyway?'))return;}
+  localStorage.setItem('hh_url',u);
+  if(s)localStorage.setItem('hh_secret',s);
+  sv('url-input','');sv('secret-input','');loadSettings();
+  const out=document.getElementById('test-out');out.style.display='block';out.textContent='✓ Connection saved.';
+}
+async function testAll(){
+  const out=document.getElementById('test-out');out.style.display='block';out.textContent='Testing...\n';
+  let txt='';
+  // Test Anthropic
+  const key=getKey();
+  if(!key){txt+='❌ No API key set.\n';}
+  else{try{const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:10,messages:[{role:'user',content:'Hi'}]})});const d=await resp.json();txt+=d.error?'❌ Anthropic: '+d.error.message+'\n':'✓ Anthropic API working.\n';}catch(e){txt+='❌ Anthropic: '+e.message+'\n';}}
+  // Test Sheets connection
+  const u=getScriptUrl();
+  if(!u){txt+='❌ No Apps Script URL set.\n';}
+  else{try{const d=await callScript('ping',{});txt+='✓ Connected to sheet: '+(d.title||'OK')+'\n';}catch(e){txt+='❌ Sheets: '+e.message+'\n';}}
+  out.textContent=txt;
+}
+function nukeAll(){if(confirm('Clear everything?')){localStorage.clear();queue=[];renderQueue();alert('Done. Reload the app.');}}
+
+// ── INIT ─────────────────────────────────────────
+document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+buildPills();
+buildTrayGrid();
+loadQ();
+fetchNextSeq();
+renderQueue();
+updSKU();
+setTimeout(getQR,300);  // pre-generate the dot.cards QR so tag previews show it immediately
+(function(){const e=document.getElementById('exp-date');if(e)e.value=new Date().toISOString().split('T')[0];})();
+</script>
+</body>
+</html>
